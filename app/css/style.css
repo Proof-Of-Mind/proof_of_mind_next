@@ -1,0 +1,392 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+
+/* Additional styles */
+@import "additional-styles/utility-patterns.css";
+@import "additional-styles/theme.css";
+
+@import "tailwindcss/utilities";
+
+/* Additional Tailwind directives: https://tailwindcss.com/docs/functions-and-directives/#responsive */
+@layer utilities {
+  .rtl {
+    direction: rtl;
+  }
+}
+
+:root {
+  --color1: rgb(0, 231, 255);
+  --color2: rgb(255, 0, 231);
+  --pika1: #54a29e;
+  --pika2: #a79d66;
+  --pikafront: url(https://assets.codepen.io/13471/pikachu-gx.webp);
+}
+
+.toast-background {
+  background-color: #333 !important;
+  border-radius: 0.5rem;
+}
+
+.toast-text {
+  color: #fff !important;
+}
+
+.skill-outer {
+  outline: none;
+}
+
+@keyframes interactiveMotion0 {
+  from {
+    d: path("M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0");
+  }
+  to {
+    d: path("M60,61.83a20,20 0 1,0 40,0a20,20 0 1,0 -40,0");
+    opacity: 0;
+  }
+}
+
+@keyframes interactiveMotion1 {
+  from {
+    d: path("M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0");
+  }
+  to {
+    d: path("M55,61.83a25,25 0 1,0 50,0a25,25 0 1,0 -50,0");
+    opacity: 0;
+  }
+}
+
+@keyframes interactiveMotion2 {
+  from {
+    d: path("M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0");
+  }
+  to {
+    d: path("M50,61.83a30,30 0 1,0 60,0a30,30 0 1,0 -60,0");
+    opacity: 0;
+  }
+}
+
+@keyframes interactiveMotion3 {
+  from {
+    d: path("M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0");
+  }
+  to {
+    d: path("M45,61.83a35,35 0 1,0 70,0a35,35 0 1,0 -70,0");
+    opacity: 0;
+  }
+}
+
+@keyframes interactiveMotion4 {
+  from {
+    d: path("M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0");
+  }
+  to {
+    d: path("M40,61.83a40,40 0 1,0 80,0a40,40 0 1,0 -80,0");
+    opacity: 0;
+  }
+}
+
+.ellipse0 {
+  animation: interactiveMotion0 3s ease-out infinite;
+}
+
+.ellipse1 {
+  animation: interactiveMotion1 3s ease-out infinite;
+}
+.ellipse2 {
+  animation: interactiveMotion2 3s ease-out infinite;
+}
+.ellipse3 {
+  animation: interactiveMotion3 3s ease-out infinite;
+}
+.ellipse4 {
+  animation: interactiveMotion4 3s ease-out infinite;
+}
+
+.interactive:hover {
+  .ellipse,
+  text {
+    animation: rainbow-color-fill 1s linear infinite;
+  }
+
+  .hand,
+  .bar {
+    stroke: #ffb9b9;
+  }
+
+  .ellipse4 {
+    stroke: #dab9ff;
+  }
+  .ellipse3 {
+    stroke: #ffb9b9;
+  }
+  .ellipse2 {
+    stroke: #fffeb9;
+  }
+  .ellipse1 {
+    stroke: #b9ffcc;
+  }
+  .ellipse0 {
+    stroke: #b9c9ff;
+  }
+  .ellipse {
+    stroke: transparent;
+  }
+}
+
+.interactive:focus {
+  .ellipse,
+  text {
+    animation: rainbow-color-fill 1s linear infinite;
+  }
+
+  .hand,
+  .bar {
+    stroke: #ffb9b9;
+  }
+
+  .ellipse4 {
+    stroke: #dab9ff;
+  }
+  .ellipse3 {
+    stroke: #ffb9b9;
+  }
+  .ellipse2 {
+    stroke: #fffeb9;
+  }
+  .ellipse1 {
+    stroke: #b9ffcc;
+  }
+  .ellipse0 {
+    stroke: #b9c9ff;
+  }
+  .ellipse {
+    stroke: transparent;
+  }
+}
+
+.container {
+  /* margin: 60px auto; */
+  /* width: 400px; */
+  width: 100%;
+  text-align: center;
+}
+
+.container .progress {
+  margin: 0 auto;
+  /* width: 400px; */
+  width: 100%;
+}
+
+.progress {
+  transform: skew(30deg);
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    0 1px rgba(255, 255, 255, 0.08);
+  content: var(--tw-content);
+  --tw-blur: blur(12px);
+}
+
+.progress-bar {
+  height: 32px;
+  border-radius: 4px;
+  background-image: -webkit-linear-gradient(
+    top,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-image: -moz-linear-gradient(
+    top,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-image: -o-linear-gradient(
+    top,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05)
+  );
+  -webkit-transition: 0.4s linear;
+  -moz-transition: 0.4s linear;
+  -o-transition: 0.4s linear;
+  transition: 0.4s linear;
+  -webkit-transition-property: width, background-color;
+  -moz-transition-property: width, background-color;
+  -o-transition-property: width, background-color;
+  transition-property: width, background-color;
+  -webkit-box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.25),
+    inset 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.25),
+    inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.fix {
+  transform: skewX(-30deg);
+}
+
+.progress > .progress-bar.one {
+  /* width: 20%; */
+  width: 50%;
+  background-color: #f63a0f;
+}
+
+.progress > .progress-bar.two {
+  /* width: 40%; */
+  width: 100%;
+  background-color: #f27011;
+}
+
+.progress > .progress-bar.three {
+  width: 60%;
+  background-color: #f2b01e;
+}
+
+.progress > .progress-bar.four {
+  width: 80%;
+  background-color: #f2d31b;
+}
+
+.progress > .progress-bar.five {
+  width: 100%;
+  background-color: #86e01e;
+}
+
+.radio {
+  display: none;
+}
+
+.label {
+  display: inline-block;
+  margin: 0 5px 20px;
+  padding: 3px 8px;
+  color: #aaa;
+  text-shadow: 0 1px black;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.radio:checked + .label {
+  color: white;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.number {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  .animate {
+    filter: url("#blurFilter");
+  }
+
+  .left,
+  .right {
+    /* min-width: 11rem; */
+    text-align: right;
+  }
+
+  .right {
+    padding-right: 1rem;
+  }
+
+  .separator {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+
+    &.show {
+      opacity: 1;
+    }
+  }
+}
+
+.svgFilter {
+  display: block;
+  width: 0;
+  height: 0;
+}
+
+/* cards */
+.card {
+  transform-style: preserve-3d;
+  perspective: 500px;
+  cursor: pointer;
+  /* width: 200px;
+  height: 300px; */
+  background: linear-gradient(45deg, black, deeppink, #6006ff);
+  border-radius: 10px;
+  transform-style: preserve-3d;
+  transition: all 0.1s;
+}
+
+.card-item {
+  --per: 30%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: url("https://key-drop.com/cdn-cgi/image/format=auto,width=270,dpr=2/uploads/skins/MANTIS1.png");
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+  filter: brightness(1.2);
+}
+
+.card-item:after {
+  content: "";
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/13471/sparkles.gif");
+  mix-blend-mode: color-dodge;
+}
+
+.card-item:before {
+  content: "";
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.7) var(--per),
+    rgba(0, 0, 0, 0.6) calc(var(--per) + 25%),
+    rgba(255, 255, 255, 0.5) calc(var(--per) + 50%),
+    transparent 100%
+  );
+  mix-blend-mode: color-dodge;
+}
+
+.card-item:hover:after,
+.card-item:hover:before {
+  display: block;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  border-radius: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.11);
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
