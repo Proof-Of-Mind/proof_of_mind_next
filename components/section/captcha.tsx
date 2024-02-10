@@ -3,16 +3,28 @@
 import { useContext, useEffect, useRef, useState } from "react";
 
 import Illustration from "@/public/images/glow-top.svg";
-import { checkToken, getUserTotal, mintCreates } from "@/utils/request";
+import { IGoldCreates } from "@/types";
+import {
+  checkToken,
+  getUserTotal,
+  mintCreates,
+  setUserReferralCode
+} from "@/utils/request";
 import { Transition } from "@headlessui/react";
-import Image from "next/image";
-import InfoModal from "./InfoModal";
-import ResultModal from "./ResultModal";
-import Particles from "./particles";
-import { ConnectContext } from "./provider/ConnectProvider";
-import { ModalContext } from "./provider/ModalProvider";
 import { crypto } from "@okxweb3/coin-bitcoin";
-import { notification } from "./Notiofication";
+import localforage from "localforage";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import BaseModal from "../BaseModal";
+import InfoModal from "../InfoModal";
+import { notification } from "../Notiofication";
+import ResultModal from "../ResultModal";
+import { ConnectContext } from "../provider/ConnectProvider";
+import { useLoading } from "../provider/LoadingProvider";
+import { ModalContext } from "../provider/ModalProvider";
+import TotalNumber from "../ui/TotalNumber";
+import LoadingAny from "../ui/loadingAny";
+import Particles from "./particles";
 
 export default function Captcha() {
   const [tab, setTab] = useState<number>(1);
@@ -20,24 +32,165 @@ export default function Captcha() {
   const [total, setTotal] = useState<number>(0);
   const [mintCount, setMintCount] = useState<number>(0);
   const [render, setRender] = useState<boolean>(false);
-  const { address, isConnected } = useContext(ConnectContext);
+  const [renderedGt, setRenderedGt] = useState<boolean>(false);
+  const [referralCode, setReferralCode] = useState<string>("");
+  const [showReferral, setShowReferral] = useState<boolean>(false);
+
+  const searchParams = useSearchParams();
+
+  const { address, p, isConnected } = useContext(ConnectContext);
 
   useEffect(() => {
     if (isConnected) {
-      getUserTotal(address).then((response) => {
+      getUserTotal(address).then((response: { json: () => Promise<any> }) => {
         response.json().then((data: any) => {
-          if (data.code === 200 && data.data !== "0") {
-            setProgress(Number(data.data.current));
+          if (data.code === 200 && data.data && data.data !== "0") {
+            if (data.data.current === 2) {
+              setProgress(0);
+            } else {
+              setProgress(Number(data.data.current));
+            }
             setTotal(Number(data.data.total));
             setMintCount(Number(data.data.mintCount));
           }
         });
       });
+
+      const referralCode = searchParams.get("referralCode");
+      if (referralCode) {
+        console.log(referralCode);
+        setReferralCode(referralCode);
+        setShowReferral(true);
+      }
     }
   }, [address, isConnected]);
 
+  const handleSetReferral = async (referralCode: string) => {
+    setShowReferral(false);
+    const hashMessage = crypto.sha256(Buffer.from(address)).toString("hex");
+    // @ts-ignore
+    const result = await (window as any).okxwallet.bitcoin
+      .signMessage(hashMessage, { from: address, type: "ecdsa" })
+      .catch((err: any) => {
+        notification("User cancel");
+        return;
+      });
+    if (result) {
+      setUserReferralCode({
+        p: p,
+        projectId: 0,
+        signature: result,
+        address: address,
+        referralCode: referralCode,
+      })
+        .then((response: { json: () => Promise<any> }) => {
+          response.json().then((data: any) => {
+            if (data.code === 200) {
+              notification("Set Referral success");
+            } else {
+              notification("Set Referral fail");
+            }
+          });
+        })
+        .catch((err: any) => {
+          console.log(err);
+          notification("Set Referral fail");
+        });
+    }
+  };
+
+  // let reqId = "";
+
+  const initGeetest4 = () => {
+    const win: any = typeof window !== "undefined" ? window : undefined;
+    win.initGeetest4(
+      {
+        captchaId: process.env.NEXT_PUBLIC_SITE_KEY,
+        language: "eng",
+        product: "bind",
+        mask: {
+          bgColor: "rgba(14, 0, 0, 0.7)",
+        },
+      },
+      function (captcha: any) {
+        captcha
+          .onReady(function () {
+            document.getElementsByClassName("geetest_box_logo")[0].remove();
+            document.getElementsByClassName("geetest_feedback")[0].remove();
+          })
+          .onSuccess(function () {
+            const result = captcha.getValidate();
+            checkToken({
+              token: JSON.stringify(result),
+              address: address,
+              reqId: "0",
+              projectId: 0,
+            })
+              .then((response: { json: () => Promise<any> }) => {
+                response.json().then((data: any) => {
+                  if (data.code === 200 && data.data) {
+                    const info: string = data.data;
+                    const process = Number(info.split("$")[1]);
+                    if (process === 2) {
+                      setProgress(2);
+                      setTimeout(() => {
+                        setMintCount(Number(info.split("$")[2]));
+                      }, 2000);
+                    } else {
+                      setProgress(process);
+                    }
+                    setTotal(Number(info.split("$")[0]));
+                    notification("Check Captcha success", "top-center", 1);
+                  } else {
+                    notification("Check Captcha fail");
+                  }
+                });
+              })
+              .catch((err: any) => {
+                notification("Check Captcha fail");
+              });
+          })
+          .onFail(function () {});
+        document
+          .getElementById("gtButton")!
+          .addEventListener("click", function () {
+            captcha.showCaptcha();
+            // getReqId(address, 0)
+            //   .then((response: { json: () => Promise<any> }) => {
+            //     response.json().then((data: any) => {
+            //       if (data.code === 200) {
+            //         reqId = data.data;
+            //         captcha.showCaptcha();
+            //       } else {
+            //         notification("Check Captcha fail");
+            //       }
+            //     });
+            //   })
+            //   .catch((err: any) => {
+            //     notification("Check Captcha fail");
+            //   });
+          });
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (isConnected && !renderedGt) {
+      initGeetest4();
+      setRenderedGt(true);
+    }
+  }, [isConnected, renderedGt]);
+
   return (
     <section id="captcha">
+      <BaseModal
+        showModal={showReferral}
+        callback={handleSetReferral}
+        onClose={() => setShowReferral(false)}
+        title={"Check Your Referral Info"}
+        content={referralCode}
+        button={"Confirm"}
+      />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
         {/* Illustration */}
         <div
@@ -76,9 +229,24 @@ export default function Captcha() {
                   }
                 >
                   <div
+                    // id="h-captcha"
                     className={render ? "visible" : "invisible"}
-                    id="recaptchaClient"
-                  ></div>
+                  >
+                    <button id="gtButton" className="button">
+                      <span className="button-outline">
+                        <span className="button-inside">
+                          <span className="button-text visually-hidden">
+                            Check Captcha
+                          </span>
+                          <span
+                            className="button-text-characters-container"
+                            aria-hidden="true"
+                          ></span>
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                  <div id="h-captcha"></div>
                 </div>
                 <div className="mt-8 max-md:mx-auto flex justify-between items-center w-full">
                   <Mint
@@ -262,64 +430,52 @@ function Interactive({
   setMintCount: Function;
   setTotal: Function;
 }) {
-  // const { address, chainId, isConnected } = useWeb3ModalAccount();
   const { address, isConnected, connect } = useContext(ConnectContext);
+  const [rendered, setRendered] = useState<boolean>(false);
 
   const handleGetRecaptcha = () => {
-    const win: any = typeof window !== "undefined" ? window : undefined;
-    if (!win || !win.grecaptcha) return;
-    if (!address || !isConnected) {
-      return;
-    }
-
-    const hSiteKey = "062c5788-64fb-45a8-b05c-1d4371cb32fd";
-
-    return new Promise((res) => {
-      // win.grecaptcha.render("recaptchaClient", {
-      //   sitekey: "6LfcwEkpAAAAAKukrCZvzObxCNLxA6NKgJmIoMfm",
-      //   theme: "dark",
-      win.hcaptcha.render("recaptchaClient", {
-        sitekey: hSiteKey,
-        theme: "dark",
-        "error-callback": () => {
-          console.log("error-callback");
-        },
-        callback: (token: any) => {
-          checkToken(token, address)
-            .then((response) => {
-              response.json().then((data: any) => {
-                if (data.code === 200) {
-                  const info: string = data.data;
-                  const process = Number(info.split("$")[1]);
-                  if (process === 2) {
-                    setProgress(2);
-                    setTimeout(() => {
-                      setProgress(0);
-                      console.log("done process");
-                      setMintCount(Number(info.split("$")[2]));
-                    }, 1000);
-                  } else {
-                    setProgress(process);
-                  }
-                  setTotal(Number(info.split("$")[0]));
-                  res("success");
-                } else {
-                  res("fail");
-                }
-              });
-            })
-            .catch((err) => {
-              console.log(err);
-              res("fail");
-            })
-            .finally(() => {
-              console.log("done");
-              win.grecaptcha.reset();
-            });
-          // res(token);
-        },
-      });
-    });
+    // const win: any = typeof window !== "undefined" ? window : undefined;
+    // if (!win || !win.grecaptcha) return;
+    // if (!address || !isConnected) {
+    //   return;
+    // }
+    // const hSiteKey = "062c5788-64fb-45a8-b05c-1d4371cb32fd";
+    // return new Promise((res) => {
+    //   win.hcaptcha.render("h-captcha", {
+    //     sitekey: hSiteKey,
+    //     theme: "dark",
+    //     "open-callback": onOpened,
+    //     // "close-callback": onClosed,
+    //     callback: (token: any) => {
+    //       checkToken(token, address)
+    //         .then((response: { json: () => Promise<any> }) => {
+    //           response.json().then((data: any) => {
+    //             if (data.code === 200) {
+    //               const info: string = data.data;
+    //               const process = Number(info.split("$")[1]);
+    //               if (process === 2) {
+    //                 setProgress(2);
+    //                 setMintCount(Number(info.split("$")[2]));
+    //               } else {
+    //                 setProgress(process);
+    //               }
+    //               setTotal(Number(info.split("$")[0]));
+    //               res("success");
+    //             } else {
+    //               res("fail");
+    //             }
+    //           });
+    //         })
+    //         .catch((err: any) => {
+    //           console.log(err);
+    //           res("fail");
+    //         })
+    //         .finally(() => {
+    //           win.grecaptcha.reset();
+    //         });
+    //     },
+    //   });
+    // });
   };
 
   const handleSubmitRecaptcha = async () => {
@@ -328,25 +484,41 @@ function Interactive({
       return;
     }
     if (!render) {
-      setRender(true);
       await handleGetRecaptcha();
+      setRender(true);
+      setRendered(true);
     }
   };
 
   useEffect(() => {
     if (address && isConnected) {
       setRender(true);
+      if (rendered) {
+        return;
+      }
       handleGetRecaptcha();
+      setRendered(true);
     } else {
       setRender(false);
     }
   }, [address, isConnected]);
   return !render ? (
     <div
-      className="skill-outer interactive cursor-pointer w-full h-full flex justify-center"
+      className="skill-outer interactive cursor-pointer w-full h-full flex justify-center items-start"
       onClick={handleSubmitRecaptcha}
     >
-      <svg
+      <button className="button pl-1 text-lg">
+        <span className="button-outline">
+          <span className="button-inside">
+            <span className="button-text visually-hidden">Start POM</span>
+            <span
+              className="button-text-characters-container"
+              aria-hidden="true"
+            ></span>
+          </span>
+        </span>
+      </button>
+      {/* <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 160 160"
         width={220}
@@ -358,8 +530,8 @@ function Interactive({
             transform="translate(50 146.24)"
             fill="#fff"
             stroke="none"
-            fontSize="16"
-            fontFamily="RobotoMono-Medium,Roboto Mono"
+            fontSize="20"
+            // fontFamily="RobotoMono-Medium,Roboto Mono"
             fontWeight="500"
           >
             Start POM
@@ -388,115 +560,8 @@ function Interactive({
           <path className="bar" d="M84.73 86.74V76.13" />
           <path className="bar" d="M76.79 87.94v-2.39" />
         </g>
-      </svg>
+      </svg> */}
     </div>
-  ) : null;
-}
-
-function TotalNumber({ render, total }: { render: boolean; total: number }) {
-  const number = useRef<HTMLDivElement>(null);
-  const left = useRef<HTMLDivElement>(null);
-  const rights = useRef<HTMLDivElement>(null);
-  const separator = useRef<HTMLDivElement>(null);
-  let target = total;
-  let current = 0;
-  const step = 42;
-
-  const reset = () => {
-    const win: any = typeof window !== "undefined" ? window : undefined;
-    if (!win) return;
-    win.requestAnimationFrame(start);
-  };
-
-  const start = () => {
-    rights.current?.classList.add("animate");
-    update();
-  };
-
-  const updateValues = () => {
-    const [first, ...rest] = current
-      .toLocaleString("en-US")
-      .split(",")
-      .reverse();
-    let thousends = rest.reverse();
-
-    const thousendsString = thousends.join("");
-    if (left.current && +left.current?.innerText !== +thousendsString) {
-      left.current && left.current.classList.add("animate");
-    } else {
-      left.current && left.current?.classList.remove("animate");
-    }
-
-    if (left.current) {
-      left.current.innerText = thousendsString;
-    }
-    if (rights.current) {
-      rights.current.innerText = first;
-    }
-  };
-
-  const update = () => {
-    if (target - current > 0) {
-      current += step;
-    } else {
-      current -= step;
-    }
-    if (current >= 1000) {
-      separator.current && separator.current.classList.add("show");
-    } else {
-      separator.current && separator.current.classList.remove("show");
-    }
-    updateValues();
-    if (Math.abs(target - current) > step) {
-      requestAnimationFrame(update);
-    } else {
-      requestAnimationFrame(() => {
-        current = target;
-        updateValues();
-        if (left.current) {
-          left.current.classList.remove("animate");
-        }
-        if (rights.current) {
-          rights.current.classList.remove("animate");
-        }
-      });
-    }
-  };
-
-  reset();
-
-  return render ? (
-    <>
-      <div
-        className="number text-[36px] sm:text-[48px] w-full"
-        id="number"
-        ref={number}
-      >
-        <div className="left" id="left" ref={left}></div>
-        <div className="separator" id="separator" ref={separator}>
-          ,
-        </div>
-        <div className="right" id="right" ref={rights}>
-          {total}
-        </div>
-      </div>
-
-      <svg
-        className="svgFilter"
-        xmlns="http://www.w3.org/2000/svg"
-        version="1.1"
-      >
-        <defs>
-          <filter id="blurFilter">
-            <feGaussianBlur
-              id="blurFilterItem"
-              in="SourceGraphic"
-              stdDeviation="8,0"
-            />
-          </filter>
-        </defs>
-      </svg>
-    </>
   ) : null;
 }
 
@@ -514,6 +579,8 @@ function Mint({
   setMintCount: Function;
 }) {
   const { address, p } = useContext(ConnectContext);
+
+  const { isLoading, showLoading, hideLoading } = useLoading();
 
   const { open, close, showModal, title, content, button } =
     useContext(ModalContext);
@@ -534,58 +601,108 @@ function Mint({
       return;
     }
     typeOrigin = type;
-    open("Mint Creates", "Please input your message", "Confirm");
+    open("Mint Creates", "Please input your nonce", "Confirm");
   };
 
   const handleSignature = async (type: number, message: string) => {
-    if (mintCount <= 0) {
+    if (mintCount <= 0 || !message || message === "") {
       return;
     }
-
+    showLoading();
+    // win.grecaptcha.ready(function () {
+    //   win.grecaptcha
+    //     .execute("6LcdEEQpAAAAAEZ8-HhtKB7ooZuMRzlkQoBNW1-B", {
+    //       action: "submit",
+    //     })
+    //     .then(function (token) {
+    //       // Add your logic to submit to your backend server here.
+    //     });
+    // });
     const hashMessage = crypto.sha256(Buffer.from(message)).toString("hex");
     // @ts-ignore
-    const result = await (window as any).okxwallet.bitcoin.signMessage(
-      hashMessage,
-      { from: address, type: "ecdsa" }
-    );
-
-    mintCreates({
-      address: address,
-      signature: result,
-      projectId: 0,
-      typedMessage: {
-        p: p,
-        message: hashMessage,
-        type: type,
-      },
-    })
-      .then((response) => {
-        response.json().then((data: any) => {
-          if (data.code === 200) {
-            setShowResult(true);
-            setResultInfo(data.data);
-            getUserTotal(address).then((response) => {
-              response.json().then((data: any) => {
-                if (data.code === 200 && data.data !== "0") {
-                  setMintCount(Number(data.data.mintCount));
-                  setTotal(Number(data.data.total));
-                }
-              });
-            });
-          } else {
-            notification(data.msg);
-          }
-        });
-      })
-      .catch((err) => {
-        console.log(err);
+    const result = await (window as any).okxwallet.bitcoin
+      .signMessage(hashMessage, { from: address, type: "ecdsa" })
+      .catch((err: any) => {
+        notification("User cancel");
+        hideLoading();
+        return;
       });
+
+    if (result) {
+      mintCreates({
+        address: address,
+        signature: result,
+        projectId: 0,
+        typedMessage: {
+          p: p,
+          message: hashMessage,
+          type: type,
+        },
+      })
+        .then((response: { json: () => Promise<any> }) => {
+          response.json().then((data: any) => {
+            if (data.code === 200) {
+              setShowResult(true);
+              setResultInfo(data.data);
+              getUserTotal(address).then(
+                (response: { json: () => Promise<any> }) => {
+                  response.json().then((data: any) => {
+                    if (data.code === 200 && data.data !== "0") {
+                      setMintCount(Number(data.data.mintCount));
+                      setTotal(Number(data.data.total));
+                    }
+                  });
+                }
+              );
+
+              if (
+                data.data.createsInfoList &&
+                data.data.createsInfoList.length > 0
+              ) {
+                data.data.createsInfoList.forEach((item: any) => {
+                  if (item.createsType === "0") {
+                    let gold: IGoldCreates = {
+                      mintId: item.mintId,
+                      nonce: message,
+                      hex: item.randomHex,
+                    };
+                    localforage
+                      .getItem(address)
+                      .then((value: any) => {
+                        if (value && value.length > 0) {
+                          value.push(gold);
+                          localforage.setItem(address, value);
+                        } else {
+                          localforage.setItem(address, [gold]);
+                        }
+                      })
+                      .catch((err) => {
+                        console.log(err);
+                      });
+                  }
+                });
+              }
+            } else {
+              notification(data.msg);
+            }
+          });
+        })
+        .catch((err: any) => {
+          console.log(err);
+        })
+        .finally(() => {
+          hideLoading();
+        });
+    }
   };
+
   return render ? (
     <>
+      {isLoading ? <LoadingAny></LoadingAny> : null}
       <InfoModal
         showModal={showModal}
         callback={callback}
+        onClose={close}
         title={title}
         content={content}
         button={button}
@@ -607,15 +724,16 @@ function Mint({
         <div
           className={
             mintCount > 0
-              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-full before:pointer-events-none shadow cursor-pointer`
-              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-full before:pointer-events-none shadow cursor-not-allowed`
+              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
+              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
           }
         >
           <span
             className="relative inline-flex items-center text-2xl sm:px-6 max-w-[220px]"
             onClick={() => handleInputMessage(0)}
           >
-            Mint&nbsp;<span className="text-xl truncate">({mintCount})</span>
+            Mint&nbsp;
+            <span className="text-xl truncate">(&nbsp;{mintCount}&nbsp;)</span>
             {/* <span className="tracking-normal text-purple-500 group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1"></span> */}
           </span>
         </div>
@@ -630,8 +748,8 @@ function Mint({
         <div
           className={
             mintCount > 9
-              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-full before:pointer-events-none shadow cursor-pointer`
-              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-full before:pointer-events-none shadow cursor-not-allowed`
+              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
+              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
           }
         >
           <span
@@ -650,41 +768,89 @@ function Mint({
 function Progress({ render, progress }: { render: boolean; progress: number }) {
   const bar = useRef<HTMLDivElement>(null);
 
+  const [width, setWidth] = useState<string>("0%");
+  const [visibility, setVisibility] = useState<any>("hidden");
+
   useEffect(() => {
+    // if (progress === 1) {
+    //   bar.current?.children[1].classList.remove("active");
+    //   bar.current?.children[2].classList.remove("active");
+    //   bar.current?.children[1].classList.add("active");
+    // }
+    // if (progress === 2) {
+    //   bar.current?.children[2].classList.add("active");
+    // }
+    // if (progress === 0) {
+    //   bar.current?.children[1].classList.remove("active");
+    //   bar.current?.children[2].classList.remove("active");
+    // }
     if (progress === 1) {
-      bar.current?.classList.add("one");
+      setVisibility("visible");
+      setWidth("50%");
     }
     if (progress === 2) {
-      bar.current?.classList.remove("one");
-      bar.current?.classList.add("two");
+      setVisibility("visible");
+      setWidth("100%");
+      setTimeout(() => {
+        setVisibility("hidden");
+        setWidth("0%");
+      }, 2000);
     }
-    // if (progress === 3) {
-    //   bar.current?.classList.remove('two');
-    //   bar.current?.classList.add('three');
-    // }
-    // if (progress === 4) {
-    //   bar.current?.classList.remove('three');
-    //   bar.current?.classList.add('four');
-    // }
-    // if (progress === 5) {
-    //   bar.current?.classList.remove('four');
-    //   bar.current?.classList.add('five');
-    // }
     if (progress === 0) {
-      bar.current?.classList.remove("two");
+      setVisibility("hidden");
+      setWidth("0%");
     }
   }, [progress]);
 
   return render ? (
-    <div className="container">
+    <div className="container feedback relative" ref={bar}>
       <span className="w-full h-full flex text-xl">Progress</span>
-      <div className="progress">
-        <div ref={bar} className="progress-bar relative">
-          <span className="absolute top-1/5 left-0 text-xl w-full h-full bg-clip-text bg-gradient-to-r from-slate-200/60 via-slate-200 to-slate-200/60 text-purple-500 fix">
-            {progress} / 2
+      <button className="button">
+        <span className="button-outline">
+          <span
+            className="progress-inside"
+            style={{ width: width, visibility: visibility }}
+          >
+            <span
+              className="button-text-characters-container"
+              aria-hidden="true"
+            ></span>
           </span>
+        </span>
+      </button>
+      {/* <li className="happy relative">
+        <div>
+          <svg className="eye left">
+            <use xlinkHref="#eye" />
+          </svg>
+          <svg className="eye right">
+            <use xlinkHref="#eye" />
+          </svg>
         </div>
-      </div>
+      </li>
+      <li className="happy">
+        <div>
+          <svg className="eye left">
+            <use xlinkHref="#eye" />
+          </svg>
+          <svg className="eye right">
+            <use xlinkHref="#eye" />
+          </svg>
+        </div>
+      </li>
+
+      <svg xmlns="http://www.w3.org/2000/svg" style={{ display: "none" }}>
+        <symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 4" id="eye">
+          <path d="M1,1 C1.83333333,2.16666667 2.66666667,2.75 3.5,2.75 C4.33333333,2.75 5.16666667,2.16666667 6,1"></path>
+        </symbol>
+        <symbol
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 18 7"
+          id="mouth"
+        >
+          <path d="M1,5.5 C3.66666667,2.5 6.33333333,1 9,1 C11.6666667,1 14.3333333,2.5 17,5.5"></path>
+        </symbol>
+      </svg> */}
     </div>
   ) : null;
 }

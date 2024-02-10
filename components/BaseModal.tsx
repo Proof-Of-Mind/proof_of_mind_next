@@ -11,7 +11,7 @@ export interface IAppProps {
   button: string;
 }
 
-export default function InfoModal(props: IAppProps) {
+export default function BaseModal(props: IAppProps) {
   const [textValue, setTextValue] = useState("");
 
   return (
@@ -59,16 +59,12 @@ export default function InfoModal(props: IAppProps) {
                   >
                     {props.title}
                   </Dialog.Title>
-                  <div className="mt-4">
-                    <label htmlFor="content" className="text-sm text-gray-300">
-                      {props.content}
-                    </label>
-                  </div>
                   <input
-                    className="border-info-modal rounded-lg text-black font-mono"
+                    className="border-info-modal mt-5 rounded-lg text-black"
                     type="text"
                     name="content"
                     id="content"
+                    placeholder={props.content}
                     value={textValue}
                     onChange={(e) => setTextValue(e.target.value)}
                   />
@@ -77,7 +73,7 @@ export default function InfoModal(props: IAppProps) {
               <div className="mt-5 sm:mt-4 sm:flex sm:justify-center">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 hover:bg-purple-700 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 hover:bg-purple-700 text-base font-medium text-white  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={() => props.callback(textValue)}
                 >
                   {props.button}
