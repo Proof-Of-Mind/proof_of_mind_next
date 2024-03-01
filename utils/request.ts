@@ -87,6 +87,24 @@ const checkTokenV3 = (token: String) => {
     })
 }
 
+const getCurrentStage = (projectId: number) => {
+    return fetch("api/captcha/currentStage/" + projectId, {
+        method: "GET",
+        mode: "cors",
+        cache: "default",
+    })
+
+}
+
+const getHolders = (projectId: number) => {
+    return fetch("api/captcha/holders/" + projectId, {
+        method: "GET",
+        mode: "cors",
+        cache: "default",
+    })
+
+}
+
 const mintCreates = (mintReq: IMintCreaters) => {
     return fetch("api/user/claimCreates", {
         method: "POST",
@@ -175,5 +193,5 @@ const getUserCreates = (userCreateReq: IUserCreatesReq) => {
     })
 }
 
-export { burnGold, checkAlreadyClaimSilver, checkToken, checkTokenV3, claimSilverShare, getGoldDetail, getGoldPairDetail, getReferralCode, getSilverCount, getUserCreates, getUserInfo, getReqId, getUserTotal, setReferralCode as setUserReferralCode, mintCreates, revealGold };
+export { burnGold, checkAlreadyClaimSilver, checkToken, checkTokenV3, getCurrentStage, getHolders, claimSilverShare, getGoldDetail, getGoldPairDetail, getReferralCode, getSilverCount, getUserCreates, getUserInfo, getReqId, getUserTotal, setReferralCode as setUserReferralCode, mintCreates, revealGold };
 

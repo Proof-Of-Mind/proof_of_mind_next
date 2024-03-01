@@ -75,8 +75,10 @@ export default function ResultModal(props: IAppProps) {
       });
     };
 
-    card.addEventListener("mousemove", moveEvent);
-    card.addEventListener("mouseleave", leaveEvent);
+    if (card) {
+      card.addEventListener("mousemove", moveEvent);
+      card.addEventListener("mouseleave", leaveEvent);
+    }
 
     return () => {
       card.removeEventListener("mousemove", moveEvent);
@@ -157,7 +159,7 @@ export default function ResultModal(props: IAppProps) {
                                 {item.createsType === "1" ? (
                                   <div className="flex w-full">
                                     <h1 className="text-left w-full pl-4 ">
-                                      #{item.mintId}
+                                      #{item.id}
                                     </h1>
                                     <h1
                                       className="text-right font-bold w-full pr-4 cursor-pointer sign fpink z-10"
@@ -165,8 +167,8 @@ export default function ResultModal(props: IAppProps) {
                                         copy(`${BASE_URL}?link=${item.linkId}`);
                                         toast.dismiss();
                                         notification(
-                                          `Copy ${item.mintId} successfully`,
-                                          "bottom-center",
+                                          `Copy ${item.id} successfully`,
+                                          "top-center",
                                           1
                                         );
                                         setTimeout(() => {
@@ -179,7 +181,7 @@ export default function ResultModal(props: IAppProps) {
                                   </div>
                                 ) : (
                                   <h1 className="inline-block text-left w-full pl-4">
-                                    #{item.mintId}
+                                    #{item.id}
                                   </h1>
                                 )}
                                 <span className="absolute top-[88%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl text-white font-bold">

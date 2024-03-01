@@ -1,7 +1,6 @@
 "use client";
 
 import { Transition } from "@headlessui/react";
-// import { StaticImageData } from "next/image";
 import {
   useContext,
   useEffect,
@@ -22,7 +21,6 @@ interface Item {
 
 export default function UserCreates() {
   const [active, setActive] = useState<number>(0);
-  const [autorotate, setAutorotate] = useState<boolean>(true);
   const { address, p } = useContext(ConnectContext);
   const childRef = useRef<HTMLDivElement>(null);
 
@@ -33,21 +31,21 @@ export default function UserCreates() {
     {
       img: "/images/gavtar.png",
       quote:
-        "The ability to capture responses is a game-changer. If a user gets tired of the sign up and leaves, that data is still persisted. Additionally, it's great to be able to select between formats.ture responses is a game-changer.",
+        "Cons succeed for inducing judgment errors—chiefly, errors arising from imperfect information and cognitive biases.",
       name: "Gold Creates",
       role: "Ltd Head of Product",
     },
     {
       img: "/images/savtar.png",
       quote:
-        "I have been using this product for a few weeks now and I am blown away by the results. My skin looks visibly brighter and smoother, and I have received so many compliments on my complexion.",
+        "The relationship begins on the internet, but extends into real life interaction.",
       name: "Silver Creates",
       role: "Spark Founder & CEO",
     },
     {
       img: "/images/bavtar.png",
       quote:
-        "As a busy professional, I don't have a lot of time to devote to working out. But with this fitness program, I have seen amazing results in just a few short weeks. The workouts are efficient and effective.",
+        "The most difficult human skills to reverse engineer are those that are below the level of conscious awareness. we're more aware of simple processes that don't work well than of complex ones that work flawlessly.",
       name: "Bronze Creates",
       role: "Appy Product Lead",
     },
@@ -61,9 +59,13 @@ export default function UserCreates() {
     id2: number,
     nonce2: string
   ) => {
+    const message = BURN_CREATES.replace("$", id1.toString()).replace(
+      "#",
+      id2.toString()
+    );
     // @ts-ignore
     const result = await (window as any).okxwallet.bitcoin.signMessage(
-      address,
+      message,
       {
         from: address,
         type: "ecdsa",
@@ -92,7 +94,7 @@ export default function UserCreates() {
       .then((response) => {
         response.json().then((data: any) => {
           if (data.code === 200) {
-            notification("Burn gold successfully", "bottom-center", 1);
+            notification("Burn gold successfully", "top-center", 1);
             setTimeout(() => {
               toast.dismiss();
             }, 2000);
@@ -106,14 +108,6 @@ export default function UserCreates() {
         notification("Burn gold failed");
       });
   };
-
-  useEffect(() => {
-    if (!autorotate) return;
-    // const interval = setInterval(() => {
-    //   setActive(active + 1 === items.length ? 0 : (active) => active + 1);
-    // }, autorotateTiming);
-    // return () => clearInterval(interval);
-  }, [active, autorotate]);
 
   const heightFix = () => {
     if (testimonials.current && testimonials.current.parentElement)
@@ -131,13 +125,27 @@ export default function UserCreates() {
   const handleShowCreates = (e: any) => {
     if (e.target.checked) {
       setShowCreates(true);
+      localforage.setItem("showCreates", "true");
     } else {
       setShowCreates(false);
+      localforage.setItem("showCreates", "false");
     }
   };
 
   useEffect(() => {
     heightFix();
+    localforage
+      .getItem("showCreates")
+      .then((value: any) => {
+        if (value && value === "true") {
+          document.getElementById("slideThree")!.click();
+          setShowCreates(true);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setShowCreates(false);
+      });
   }, []);
 
   return (
@@ -251,7 +259,6 @@ export default function UserCreates() {
                   key={index}
                   onClick={() => {
                     setActive(index);
-                    setAutorotate(false);
                   }}
                 >
                   <span className="relative">
@@ -270,6 +277,7 @@ export default function UserCreates() {
   );
 }
 
+import { BURN_CREATES, CLAIM_CREATES } from "@/constants";
 import { IGoldCreates, IUserCreates } from "@/types";
 import {
   burnGold,
@@ -322,6 +330,8 @@ function CreatesList({
       pageNum: page,
     });
     const data = await response.json();
+
+    console.log(hasNextPage);
 
     return {
       rows: data.data.createsList,
@@ -378,6 +388,7 @@ function CreatesList({
 
   const handleRevealGold = async (id: number, nonce: string) => {
     const hashMessage = crypto.sha256(Buffer.from(nonce)).toString("hex");
+    nonce = CLAIM_CREATES.replace("$", hashMessage);
     // @ts-ignore
     const result = await (window as any).okxwallet.bitcoin
       .signMessage(address, {
@@ -389,35 +400,73 @@ function CreatesList({
         return;
       });
 
-    revealGold({
-      projectId: 0,
-      goldId: id,
-      p: p,
-      address: address,
-      message: hashMessage,
-      signature: result,
-    })
-      .then((response) => {
-        response.json().then((data: any) => {
-          if (data.code === 200) {
-            if (data.data === "1") {
-              notification("Reveal gold successfully", "bottom-center", 1);
-            }
-            if (data.data === "2") {
-              notification("Wait for reveal gold", "bottom-center", 1);
-            }
-            setTimeout(() => {
-              toast.dismiss();
-            }, 2000);
-          } else {
-            notification("Reveal gold failed");
-          }
-        });
+    if (result) {
+      revealGold({
+        projectId: 0,
+        goldId: id,
+        p: p,
+        address: address,
+        message: nonce,
+        signature: result,
       })
-      .catch((err) => {
-        console.log(err);
-        notification("Reveal gold failed");
-      });
+        .then((response) => {
+          response.json().then((data: any) => {
+            if (data.code === 200) {
+              if (data.data === "1") {
+                localforage
+                  .getItem("nonce")
+                  .then((value: any) => {
+                    if (value && value.length > 0) {
+                      let nextId = id % 2 === 0 ? id - 1 : id + 1;
+                      for (let i = 0; i < value.length; i++) {
+                        if (value[i].id === id) {
+                          value.splice(i, 1);
+                        }
+                        if (value[i].id === nextId) {
+                          value.splice(i, 1);
+                        }
+                      }
+                    }
+                  })
+                  .catch((err) => {});
+
+                notification("Reveal gold successfully", "top-center", 1);
+              }
+              if (data.data === "2") {
+                localforage
+                  .getItem("nonce")
+                  .then((value: any) => {
+                    if (value && value.length > 0) {
+                      value.forEach((item: any) => {
+                        if (item.id === id) {
+                          item.nonce = nonce;
+                        }
+                      });
+                      localforage.setItem("nonce", value);
+                    } else {
+                      localforage.setItem("nonce", [{ id: id, nonce: nonce }]);
+                    }
+                  })
+                  .catch((err) => {});
+
+                notification("Wait for reveal gold", "top-center", 1);
+              }
+              setTimeout(() => {
+                toast.dismiss();
+              }, 2000);
+            } else {
+              notification("Reveal gold failed");
+            }
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          notification("Reveal gold failed");
+        })
+        .finally(() => {
+          setShowResult(false);
+        });
+    }
   };
 
   useEffect(() => {
@@ -444,8 +493,6 @@ function CreatesList({
     isFetchingNextPage,
     rowVirtualizer.getVirtualItems(),
   ]);
-
-  const flag = true;
 
   return (
     <>
@@ -521,11 +568,12 @@ function CreatesList({
                       className="border-b-[1px] border-solid border-[#e5e7eb] py-1 text-base tracking-[2px]"
                     >
                       {isLoaderRow ? (
-                        hasNextPage ? (
-                          "Loading more..."
-                        ) : (
-                          "Nothing more to load"
-                        )
+                        // hasNextPage ? (
+                        //   "Loading more..."
+                        // ) : (
+                        //   "Nothing more to load"
+                        // )
+                        ""
                       ) : (
                         <>
                           {active === "0" && (
@@ -545,12 +593,12 @@ function CreatesList({
 
                               <div className="flex flex-row md:space-x-2 items-center min-w-[25%] text-xxs lg:text-base">
                                 {box.used === "1" ? (
-                                  <div>
+                                  <div className="flex items-center w-full text-base">
                                     <h1 className="text-center font-bold w-full cursor-pointer sign fpink z-10">
                                       Used
                                     </h1>
                                   </div>
-                                ) : (
+                                ) : box.used !== "3" ? (
                                   <>
                                     <h1
                                       onClick={() =>
@@ -580,7 +628,7 @@ function CreatesList({
                                                     toast.dismiss();
                                                     notification(
                                                       `Copy ${box.id} nonce successfully`,
-                                                      "bottom-center",
+                                                      "top-center",
                                                       1
                                                     );
                                                     setTimeout(() => {
@@ -615,6 +663,14 @@ function CreatesList({
                                       Copy #{box.id} key
                                     </h1>
                                   </>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center w-full text-base">
+                                      <h1 className="text-center font-bold w-full cursor-pointer sign fpink z-10">
+                                        Burned
+                                      </h1>
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -643,7 +699,7 @@ function CreatesList({
                                     toast.dismiss();
                                     notification(
                                       `Copy ${box.mintId} successfully`,
-                                      "bottom-center",
+                                      "top-center",
                                       1
                                     );
                                     setTimeout(() => {
@@ -651,7 +707,7 @@ function CreatesList({
                                     }, 2000);
                                   }}
                                 >
-                                  share
+                                  share ({box.shareCount})
                                 </h1>
                               </div>
                             </div>

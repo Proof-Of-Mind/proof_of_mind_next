@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { notification } from "../../components/Notiofication";
 import UserModal from "../UserModal";
 import { ConnectContext } from "../provider/ConnectProvider";
@@ -16,7 +16,12 @@ export default function Header() {
     const flag = check();
     if (!flag) {
       console.error("connect wallet error");
-      notification("", "top-center", 3);
+      notification(
+        "Please install wallet or select supported browser",
+        "top-center",
+        3
+      );
+      return;
     }
     if (!isConnected) {
       connect();
@@ -24,6 +29,10 @@ export default function Header() {
       disconnect();
     }
   };
+
+  useEffect(() => {
+    handleConnectWallet();
+  }, []);
 
   return (
     <header className="absolute w-full z-30">

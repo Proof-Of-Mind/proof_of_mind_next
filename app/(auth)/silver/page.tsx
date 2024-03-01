@@ -1,8 +1,8 @@
 "use client";
 import { notification } from "@/components/Notiofication";
-import Particles from "@/components/section/particles";
 import { ConnectContext } from "@/components/provider/ConnectProvider";
 import { useLoading } from "@/components/provider/LoadingProvider";
+import Particles from "@/components/section/particles";
 import LoadingAny from "@/components/ui/loadingAny";
 import {
   checkAlreadyClaimSilver,
@@ -15,10 +15,10 @@ import { useContext, useEffect, useState } from "react";
 
 const Silver = () => {
   const [render, setRender] = useState<boolean>(false);
-  const [check, setCheck] = useState<boolean>(false);
+  const [checkClaimed, setCheckClaimed] = useState<boolean>(false);
   const [silverCount, setSilverCount] = useState<number>(0);
   const searchParams = useSearchParams();
-  const { address, connect } = useContext(ConnectContext);
+  const { address, check, connect } = useContext(ConnectContext);
   const { isLoading, showLoading, hideLoading } = useLoading();
 
   const getCount = () => {
@@ -43,7 +43,7 @@ const Silver = () => {
             if (data.code === 200) {
               setRender(true);
               if (data.data === "0") {
-                setCheck(true);
+                setCheckClaimed(true);
               }
             }
           });
@@ -66,7 +66,7 @@ const Silver = () => {
         response.json().then((data: any) => {
           if (data.code === 200) {
             notification("Claim success", "top-center", 1);
-            setCheck(false);
+            setCheckClaimed(false);
           } else {
             notification(data.msg);
           }
@@ -82,7 +82,17 @@ const Silver = () => {
       getCount();
       checkAlreadyClaimSilverCreates();
     } else {
-      connect();
+      const flag = check();
+      if (!flag) {
+        console.error("connect wallet error");
+        notification(
+          "Please install wallet or select supported browser",
+          "top-center",
+          3
+        );
+      } else {
+        connect();
+      }
     }
   }, [address]);
 
@@ -184,7 +194,7 @@ const Silver = () => {
           </div>
         </div>
         <div className="mt-5 sm:mt-4 sm:flex sm:justify-center">
-          {render && !check ? (
+          {render && !checkClaimed ? (
             <div className="mt-5 sm:mt-4 sm:flex sm:justify-center">
               <span className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-12 py-2 bg-purple-600 hover:bg-purple-700 text-lg font-medium text-white  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-xl">
                 😵 You have claimed this share.
@@ -196,7 +206,7 @@ const Silver = () => {
               className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-12 py-2 bg-purple-600 hover:bg-purple-700 text-lg font-medium text-white  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-xl"
               onClick={claimSilverCreates}
             >
-              Claim ({silverCount})
+              Claim remaining {silverCount}
             </button>
           )}
         </div>

@@ -64,6 +64,9 @@ export default function InfoModal(props: IAppProps) {
                       {props.content}
                     </label>
                   </div>
+                  <div className="text-xs text-left">
+                    <span>If you are extremely fortunate to obtain a gold box, the Nonce filled in here will serve as the key for the paired gold box to be exchanged on the social network of the dark forest, in order to unlock the super prize inside each other's golden chest.</span>
+                  </div>
                   <input
                     className="border-info-modal rounded-lg text-black font-mono"
                     type="text"

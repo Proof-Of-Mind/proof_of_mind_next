@@ -94,7 +94,7 @@ export default function TotalNumber({
           ,
         </div>
         <div className="right" id="right" ref={rights}>
-          {total}
+          {total} $POM
         </div>
       </div>
 

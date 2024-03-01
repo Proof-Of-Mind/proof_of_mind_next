@@ -1,6 +1,7 @@
 "use client";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import localforage from "localforage";
+import { Fragment, useEffect, useState } from "react";
 
 export interface IAppProps {
   showModal: boolean;
@@ -13,6 +14,29 @@ export interface IAppProps {
 
 export default function GoldModal(props: IAppProps) {
   const [textValue, setTextValue] = useState("");
+  const [placeholder, setPlaceholder] = useState("Input nonce");
+
+  useEffect(() => {
+    if (props.showModal) {
+      localforage
+        .getItem("nonce")
+        .then((value: any) => {
+          let text = "Input nonce";
+          if (value && value.length > 0) {
+            value.forEach((item: any) => {
+              if (item.id === props.content[0].id) {
+                text = item.nonce;
+              }
+            });
+          }
+          setPlaceholder(text);
+        })
+        .catch((err) => {
+          console.log(err);
+          setPlaceholder("Input nonce");
+        });
+    }
+  }, [props.showModal]);
 
   return (
     <Transition.Root show={props.showModal} as={Fragment}>
@@ -76,8 +100,8 @@ export default function GoldModal(props: IAppProps) {
                             </h1>
                             {props.content[0].used ? (
                               <input
-                                className="absolute top-[88%] w-3/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-base text-black z-10"
-                                placeholder="Input nonce"
+                                className="absolute top-[88%] w-3/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none font-mono text-xs text-black z-10"
+                                placeholder={placeholder}
                                 onChange={(e) => setTextValue(e.target.value)}
                               ></input>
                             ) : (

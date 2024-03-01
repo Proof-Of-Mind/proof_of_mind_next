@@ -115,12 +115,12 @@ export default function BurnModal(props: IAppProps) {
               >
                 <div className="flex space-x-4">
                   <input
-                    className="w-[64px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-base text-black z-10"
+                    className="w-[64px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-black font-mono z-10"
                     placeholder="id_1"
                     id="id_1"
                   ></input>
                   <input
-                    className="w-[128px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-base text-black z-10"
+                    className="w-[128px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none  text-black font-mono z-10"
                     placeholder="nonce_1"
                     maxLength={80}
                     id="nonce_1"
@@ -128,12 +128,12 @@ export default function BurnModal(props: IAppProps) {
                 </div>
                 <div className="flex space-x-4">
                   <input
-                    className="w-[64px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-base text-black z-10"
+                    className="w-[64px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none  text-black font-mono z-10"
                     placeholder="id_2"
                     id="id_2"
                   ></input>
                   <input
-                    className="w-[128px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none text-base text-black z-10"
+                    className="w-[128px] border-solid border-2 rounded-lg focus:ring-0 focus:border-info-modal outline-none focus:outline-none  text-black font-mono z-10"
                     placeholder="nonce_2"
                     maxLength={80}
                     id="nonce_2"

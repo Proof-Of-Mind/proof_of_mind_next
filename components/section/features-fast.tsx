@@ -1,7 +1,45 @@
+import { useEffect } from "react";
 import Highlighter, { HighlighterItem } from "../highlighter";
 import Particles from "./particles";
 
+const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 export default function FeaturesFast() {
+  const randomChar = () =>
+      chars[Math.floor(Math.random() * (chars.length - 1))],
+    randomString = (length: number) =>
+      Array.from(Array(length)).map(randomChar).join("");
+
+  const randomText = () => {
+    const card = document.getElementById("lettersCard")!;
+    const letters = document.getElementsByClassName("letters")[0]!;
+    const animation = () => {
+      const rect = card.getBoundingClientRect(),
+        x = Math.random() * rect.width,
+        y = Math.random() * rect.height;
+
+      // @ts-ignore
+      letters.style.setProperty("--x", `${x}px`);
+      // @ts-ignore
+      letters.style.setProperty("--y", `${y}px`);
+      // @ts-ignore
+      letters.innerText = randomString(1500);
+    };
+    requestAnimationFrame(animation);
+  };
+
+  useEffect(() => {
+    let interval: string | number | NodeJS.Timeout | undefined;
+    setTimeout(() => {
+      interval = setInterval(() => {
+        randomText();
+      }, 100);
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <section className="relative">
       {/* Particles animation */}
@@ -105,45 +143,16 @@ export default function FeaturesFast() {
                         <div className="absolute inset-0 translate-z-0 bg-purple-500 rounded-full blur-[120px] opacity-70" />
                         <div className="absolute w-1/4 h-1/4 translate-z-0 bg-purple-400 rounded-full blur-[40px]" />
                       </div>
-                      {/* Text */}
-                      {/* <div className="md:max-w-[480px] shrink-0 order-1 md:order-none p-6 pt-0 md:p-8 md:pr-0">
-                        <div className="mb-5">
-                          <div>
-                            <h3 className="inline-flex text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-200/60 via-slate-200 to-slate-200/60 pb-1">
-                              Optimized for security
-                            </h3>
-                            <p className="text-slate-400">
-                              Optimize for user experience and privacy. Use
-                              social login integrations, lower user friction,
-                              incorporate rich user profiling, and facilitate
-                              more transactions.
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <a
-                            className="btn-sm text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.slate.900),_theme(colors.slate.900))_padding-box,_conic-gradient(theme(colors.slate.400),_theme(colors.slate.700)_25%,_theme(colors.slate.700)_75%,_theme(colors.slate.400)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/30 before:rounded-full before:pointer-events-none"
-                            href="#0"
-                          >
-                            <span className="relative inline-flex items-center">
-                              Learn more{" "}
-                              <span className="tracking-normal text-purple-500 group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">
-                                -&gt;
-                              </span>
-                            </span>
-                          </a>
-                        </div>
-                      </div> */}
                       {/* Image */}
-                      {/* <div className="relative w-full h-64 md:h-auto overflow-hidden">
-                        <img
-                          className="absolute bottom-0 left-1/2 -translate-x-1/2 mx-auto max-w-none md:relative md:left-0{md}transla{}-x-0"
-                          src={`/images/feature-image-01.png`}
-                          width="504"
-                          height="400"
-                          alt="Feature 01"
-                        />
-                      </div> */}
+                      <div className="relative w-full h-64 md:h-auto overflow-hidden">
+                        <div
+                          id="lettersCard"
+                          className="absolute h-[126px] bottom-0 left-1/2 -translate-x-1/2 mx-auto max-w-none md:relative md:left-0{md}transla{}-x-0"
+                        >
+                          {/* <div className="letters-gradient"></div> */}
+                          <div className="letters fpurple py-1"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </HighlighterItem>

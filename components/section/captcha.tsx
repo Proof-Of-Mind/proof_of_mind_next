@@ -2,19 +2,20 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 
-import Illustration from "@/public/images/glow-top.svg";
+import { CLAIM_CREATES, SET_REFERRAL } from "@/constants";
 import { IGoldCreates } from "@/types";
 import {
   checkToken,
   getUserTotal,
   mintCreates,
-  setUserReferralCode
+  setUserReferralCode,
 } from "@/utils/request";
 import { Transition } from "@headlessui/react";
 import { crypto } from "@okxweb3/coin-bitcoin";
 import localforage from "localforage";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import Swiper, { Autoplay } from "swiper";
+import "swiper/swiper.min.css";
 import BaseModal from "../BaseModal";
 import InfoModal from "../InfoModal";
 import { notification } from "../Notiofication";
@@ -25,6 +26,7 @@ import { ModalContext } from "../provider/ModalProvider";
 import TotalNumber from "../ui/TotalNumber";
 import LoadingAny from "../ui/loadingAny";
 import Particles from "./particles";
+Swiper.use([Autoplay]);
 
 export default function Captcha() {
   const [tab, setTab] = useState<number>(1);
@@ -67,10 +69,10 @@ export default function Captcha() {
 
   const handleSetReferral = async (referralCode: string) => {
     setShowReferral(false);
-    const hashMessage = crypto.sha256(Buffer.from(address)).toString("hex");
+    const message = SET_REFERRAL.replace("$", address);
     // @ts-ignore
     const result = await (window as any).okxwallet.bitcoin
-      .signMessage(hashMessage, { from: address, type: "ecdsa" })
+      .signMessage(message, { from: address, type: "ecdsa" })
       .catch((err: any) => {
         notification("User cancel");
         return;
@@ -135,7 +137,7 @@ export default function Captcha() {
                       setProgress(2);
                       setTimeout(() => {
                         setMintCount(Number(info.split("$")[2]));
-                      }, 2000);
+                      }, 1000);
                     } else {
                       setProgress(process);
                     }
@@ -192,8 +194,16 @@ export default function Captcha() {
         button={"Confirm"}
       />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="absolute inset-0 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none w-full h-full rounded-full overflow-hidden [mask-image:_radial-gradient(black,_transparent_60%)]">
+          <div className="h-[200%] animate-endless">
+            <div className="absolute inset-0 [background:_repeating-linear-gradient(transparent,_transparent_48px,_theme(colors.white)_48px,_theme(colors.white)_49px)] blur-[2px] opacity-20" />
+            <div className="absolute inset-0 [background:_repeating-linear-gradient(transparent,_transparent_48px,_theme(colors.purple.500)_48px,_theme(colors.purple.500)_49px)]" />
+            <div className="absolute inset-0 [background:_repeating-linear-gradient(90deg,transparent,_transparent_48px,_theme(colors.white)_48px,_theme(colors.white)_49px)] blur-[2px] opacity-20" />
+            <div className="absolute inset-0 [background:_repeating-linear-gradient(90deg,transparent,_transparent_48px,_theme(colors.purple.500)_48px,_theme(colors.purple.500)_49px)]" />
+          </div>
+        </div>
         {/* Illustration */}
-        <div
+        {/* <div
           className="absolute inset-0 -z-10 -mx-28 rounded-t-[3rem] pointer-events-none overflow-hidden"
           aria-hidden="true"
         >
@@ -206,7 +216,7 @@ export default function Captcha() {
               alt="Features Illustration"
             />
           </div>
-        </div>
+        </div> */}
 
         <div className="pt-16 pb-12 md:pt-52 md:pb-20">
           <div>
@@ -218,21 +228,21 @@ export default function Captcha() {
                 data-aos="fade-down"
               >
                 {/* Content #1 */}
-                <div>
+                <div className="w-full">
                   <Progress render={render} progress={progress}></Progress>
                 </div>
                 <div
                   className={
                     progress === 2
-                      ? `mt-8 max-w-xs max-md:mx-auto space-y-2`
-                      : `mt-8 max-w-xs max-md:mx-auto space-y-2`
+                      ? `mt-8  max-md:mx-auto space-y-2`
+                      : `mt-8  max-md:mx-auto space-y-2`
                   }
                 >
                   <div
                     // id="h-captcha"
                     className={render ? "visible" : "invisible"}
                   >
-                    <button id="gtButton" className="button">
+                    <button id="gtButton" className="button w-full">
                       <span className="button-outline">
                         <span className="button-inside">
                           <span className="button-text visually-hidden">
@@ -248,7 +258,7 @@ export default function Captcha() {
                   </div>
                   <div id="h-captcha"></div>
                 </div>
-                <div className="mt-8 max-md:mx-auto flex justify-between items-center w-full">
+                <div className="mt-8 max-md:mx-auto flex flex-col space-y-4 md:space-y-0 md:flex-row justify-between items-center w-full">
                   <Mint
                     render={render}
                     mintCount={mintCount}
@@ -282,10 +292,10 @@ export default function Captcha() {
                     staticity={30}
                   />
 
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center relative">
                     <div className="relative w-48 h-48 flex justify-center items-center">
                       {/* Halo effect */}
-                      <svg
+                      {/* <svg
                         className="absolute inset-0 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 will-change-transform pointer-events-none blur-md"
                         width="480"
                         height="480"
@@ -325,16 +335,16 @@ export default function Captcha() {
                             d="M240,0 C372.5484,0 480,107.4516 480,240 C480,372.5484 372.5484,480 240,480 C107.4516,480 0,372.5484 0,240 C0,107.4516 107.4516,0 240,0 Z M240,88.8 C156.4944,88.8 88.8,156.4944 88.8,240 C88.8,323.5056 156.4944,391.2 240,391.2 C323.5056,391.2 391.2,323.5056 391.2,240 C391.2,156.4944 323.5056,88.8 240,88.8 Z"
                           />
                         </g>
-                      </svg>
+                      </svg> */}
                       {/* Grid */}
-                      <div className="absolute inset-0 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[500px] h-[500px] rounded-full overflow-hidden [mask-image:_radial-gradient(black,_transparent_60%)]">
+                      {/* <div className="absolute inset-0 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[500px] h-[500px] rounded-full overflow-hidden [mask-image:_radial-gradient(black,_transparent_60%)]">
                         <div className="h-[200%] animate-endless">
                           <div className="absolute inset-0 [background:_repeating-linear-gradient(transparent,_transparent_48px,_theme(colors.white)_48px,_theme(colors.white)_49px)] blur-[2px] opacity-20" />
                           <div className="absolute inset-0 [background:_repeating-linear-gradient(transparent,_transparent_48px,_theme(colors.purple.500)_48px,_theme(colors.purple.500)_49px)]" />
                           <div className="absolute inset-0 [background:_repeating-linear-gradient(90deg,transparent,_transparent_48px,_theme(colors.white)_48px,_theme(colors.white)_49px)] blur-[2px] opacity-20" />
                           <div className="absolute inset-0 [background:_repeating-linear-gradient(90deg,transparent,_transparent_48px,_theme(colors.purple.500)_48px,_theme(colors.purple.500)_49px)]" />
                         </div>
-                      </div>
+                      </div> */}
                       {/* Icons */}
                       <Transition
                         show={tab === 1}
@@ -346,7 +356,7 @@ export default function Captcha() {
                         leaveFrom="opacity-100 rotate-0"
                         leaveTo="opacity-0 rotate-[60deg]"
                       >
-                        <div className="relative flex items-center justify-center w-16 h-16 border border-transparent rounded-2xl shadow-2xl -rotate-[14deg] [background:linear-gradient(theme(colors.slate.900),_theme(colors.slate.900))_padding-box,_conic-gradient(theme(colors.slate.400),_theme(colors.slate.700)_25%,_theme(colors.slate.700)_75%,_theme(colors.slate.400)_100%)_border-box] before:absolute before:inset-0 before:bg-slate-800/30 before:rounded-2xl">
+                        {/* <div className="relative flex items-center justify-center w-16 h-16 border border-transparent rounded-2xl shadow-2xl -rotate-[14deg] [background:linear-gradient(theme(colors.slate.900),_theme(colors.slate.900))_padding-box,_conic-gradient(theme(colors.slate.400),_theme(colors.slate.700)_25%,_theme(colors.slate.700)_75%,_theme(colors.slate.400)_100%)_border-box] before:absolute before:inset-0 before:bg-slate-800/30 before:rounded-2xl">
                           <svg
                             className="relative fill-slate-200"
                             xmlns="http://www.w3.org/2000/svg"
@@ -358,6 +368,15 @@ export default function Captcha() {
                               d="M10.55 15.91H.442L14.153.826 12.856 9.91h10.107L9.253 24.991l1.297-9.082Zm.702-8.919L4.963 13.91h7.893l-.703 4.918 6.289-6.918H10.55l.702-4.918Z"
                             />
                           </svg>
+                        </div> */}
+                        <div className="card w-[100px] h-[200px] lg:w-[200px] lg:h-[300px] !border-none flex-none clip-card absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/4 hover:z-10">
+                          <div className="card-item flex flex-col items-start justify-start pt-4 relative item-2"></div>
+                        </div>
+                        <div className="card w-[100px] h-[200px] lg:w-[200px] lg:h-[300px] !border-none flex-none  clip-card absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2  -ml-[120px] hover:z-10">
+                          <div className="card-item flex flex-col items-start justify-start pt-4 relative item-1 !border-none"></div>
+                        </div>
+                        <div className="card w-[100px] h-[200px] lg:w-[200px] lg:h-[300px] !border-none flex-none clip-card absolute top-3/4 left-1/2 transform -translate-x-1/2 -translate-y-3/4  ml-[120px] hover:z-10">
+                          <div className="card-item flex flex-col items-start justify-start pt-4 relative item-0 !shadow-none !border-none"></div>
                         </div>
                       </Transition>
                       <Transition
@@ -405,10 +424,63 @@ export default function Captcha() {
                           </svg>
                         </div>
                       </Transition>
+                      <>
+                        <svg style={{ position: "absolute" }}>
+                          <filter
+                            id="pixelate-mosaic"
+                            x="0%"
+                            y="0%"
+                            width="100%"
+                            height="100%"
+                          >
+                            <feGaussianBlur
+                              stdDeviation="2"
+                              in="SourceGraphic"
+                              result="smoothed"
+                            />
+                            <feImage
+                              width="15"
+                              height="15"
+                              xlinkHref="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAWSURBVAgdY1ywgOEDAwKxgJhIgFQ+AP/vCNK2s+8LAAAAAElFTkSuQmCC"
+                              result="displacement-map"
+                            />
+                            <feTile
+                              in="displacement-map"
+                              result="pixelate-map"
+                            />
+                            <feDisplacementMap
+                              in="smoothed"
+                              in2="pixelate-map"
+                              xChannelSelector="R"
+                              yChannelSelector="G"
+                              scale="50"
+                              result="pre-final"
+                            />
+                            <feComposite operator="in" in2="SourceGraphic" />
+                          </filter>
+                          {/* </defs> */}
+                          <filter id="pixelate" x="0" y="0">
+                            <feFlood x="4" y="4" height="2" width="2" />
+
+                            <feComposite width="10" height="10" />
+
+                            <feTile result="a" />
+
+                            <feComposite
+                              in="SourceGraphic"
+                              in2="a"
+                              operator="in"
+                            />
+                            <feMorphology operator="dilate" radius="5" />
+                          </filter>
+                        </svg>
+                        {/* <div id="movableDiv" className="filter"></div> */}
+                      </>
                     </div>
                   </div>
                 </div>
               </div>
+              
             </div>
           </div>
         </div>
@@ -518,49 +590,6 @@ function Interactive({
           </span>
         </span>
       </button>
-      {/* <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 160 160"
-        width={220}
-        height={220}
-      >
-        <g opacity=".87" fill="none" stroke="#fff">
-          <text
-            className="text mx-auto"
-            transform="translate(50 146.24)"
-            fill="#fff"
-            stroke="none"
-            fontSize="20"
-            // fontFamily="RobotoMono-Medium,Roboto Mono"
-            fontWeight="500"
-          >
-            Start POM
-          </text>
-          <path className="ellipse4" />
-          <path className="ellipse3" />
-          <path className="ellipse2" />
-          <path className="ellipse1" />
-          <path className="ellipse0" />
-          <path
-            className="ellipse"
-            d="M68,61.83a12,12 0 1,0 24,0a12,12 0 1,0 -24,0"
-            strokeMiterlimit="10"
-            fill="#fff"
-            opacity="0.87"
-          />
-          <path
-            className="hand"
-            d="M100.33 82.21a5.82 5.82 0 0 0-3.66.19c-.08-.93-.46-3.07-2.32-3.64a5.83 5.83 0 0 0-3.74.21 3.59 3.59 0 0 0-2.24-3 5.85 5.85 0 0 0-3.64.17v-7.68c0-2-.83-5.44-4-5.44-2.91 0-4 3.25-4 5.44v17.08C75.34 84.12 73 82.13 71.14 82c-3-.24-5.19 1.64-4.59 4.56s3.12 2.75 5 5.14 6.34 9.81 6.37 9.86c.67 1.26 2.49 4.74 2.79 5.62a12 12 0 0 1 .27 3.09.79.79 0 0 0 .22.55.76.76 0 0 0 .54.23h17.18a.77.77 0 0 0 .76-.68 17.08 17.08 0 0 0 0-2.73 5.5 5.5 0 0 1 1.32-3.84 11.61 11.61 0 0 0 1.63-4.52.41.41 0 0 0 0-.11V86.28c.04-.28-.01-3.35-2.3-4.07z"
-            fill="#121212"
-            stroke="#fff"
-            strokeMiterlimit="10"
-          />
-          <path className="bar" d="M96.68 88.8v-6.4" />
-          <path className="bar" d="M90.61 87.29v-8.36" />
-          <path className="bar" d="M84.73 86.74V76.13" />
-          <path className="bar" d="M76.79 87.94v-2.39" />
-        </g>
-      </svg> */}
     </div>
   ) : null;
 }
@@ -586,6 +615,8 @@ function Mint({
     useContext(ModalContext);
 
   const [showResult, setShowResult] = useState<boolean>(false);
+  const [mintTitle, setMintTitle] = useState<string>("Mint Creates");
+  const [resultTitle, setResultTitle] = useState<string>("Mint Result");
   const [resultInfo, setResultInfo] = useState<string>("");
 
   const callback = (result: string) => {
@@ -601,7 +632,12 @@ function Mint({
       return;
     }
     typeOrigin = type;
-    open("Mint Creates", "Please input your nonce", "Confirm");
+    if (type === 0) {
+      setMintTitle("Mint Creates");
+    } else {
+      setMintTitle("Mint Creates x10");
+    }
+    open(mintTitle, "Please input your nonce", "Confirm");
   };
 
   const handleSignature = async (type: number, message: string) => {
@@ -618,10 +654,12 @@ function Mint({
     //       // Add your logic to submit to your backend server here.
     //     });
     // });
+
     const hashMessage = crypto.sha256(Buffer.from(message)).toString("hex");
+    message = CLAIM_CREATES.replace("$", hashMessage);
     // @ts-ignore
     const result = await (window as any).okxwallet.bitcoin
-      .signMessage(hashMessage, { from: address, type: "ecdsa" })
+      .signMessage(message, { from: address, type: "ecdsa" })
       .catch((err: any) => {
         notification("User cancel");
         hideLoading();
@@ -635,13 +673,18 @@ function Mint({
         projectId: 0,
         typedMessage: {
           p: p,
-          message: hashMessage,
+          message: message,
           type: type,
         },
       })
         .then((response: { json: () => Promise<any> }) => {
           response.json().then((data: any) => {
             if (data.code === 200) {
+              if (type === 0) {
+                setResultTitle("Mint result");
+              } else {
+                setResultTitle("Mint x10 result");
+              }
               setShowResult(true);
               setResultInfo(data.data);
               getUserTotal(address).then(
@@ -703,14 +746,14 @@ function Mint({
         showModal={showModal}
         callback={callback}
         onClose={close}
-        title={title}
+        title={mintTitle}
         content={content}
         button={button}
       />
       <ResultModal
         showModal={showResult}
         callback={() => setShowResult(false)}
-        title={"Mint Result"}
+        title={resultTitle}
         content={resultInfo}
         button={button}
       />
@@ -724,8 +767,8 @@ function Mint({
         <div
           className={
             mintCount > 0
-              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
-              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
+              ? `btn-sm py-0.5 w-[200px] text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
+              : `btn-sm py-0.5 w-[200px] text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
           }
         >
           <span
@@ -748,8 +791,8 @@ function Mint({
         <div
           className={
             mintCount > 9
-              ? `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
-              : `btn-sm py-0.5 text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
+              ? `btn-sm py-0.5 w-[200px] text-slate-300 hover:text-white transition duration-150 ease-in-out group [background:linear-gradient(theme(colors.purple.500),_theme(colors.purple.500))_padding-box,_linear-gradient(theme(colors.purple.500),_theme(colors.purple.200)_75%,_theme(colors.transparent)_100%)_border-box] relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-pointer`
+              : `btn-sm py-0.5 w-[200px] text-slate-300 hover:text-white transition duration-150 ease-in-out group relative before:absolute before:inset-0 before:bg-slate-800/50 before:rounded-[3px] before:pointer-events-none shadow cursor-not-allowed`
           }
         >
           <span
@@ -767,50 +810,58 @@ function Mint({
 
 function Progress({ render, progress }: { render: boolean; progress: number }) {
   const bar = useRef<HTMLDivElement>(null);
-
-  const [width, setWidth] = useState<string>("0%");
-  const [visibility, setVisibility] = useState<any>("hidden");
+  const [progressText, setProgressText] = useState<string>("0");
+  const [batStyle, setBarStyle] = useState<any>({
+    width: "0%",
+    visibility: "hidden",
+  });
 
   useEffect(() => {
-    // if (progress === 1) {
-    //   bar.current?.children[1].classList.remove("active");
-    //   bar.current?.children[2].classList.remove("active");
-    //   bar.current?.children[1].classList.add("active");
-    // }
-    // if (progress === 2) {
-    //   bar.current?.children[2].classList.add("active");
-    // }
-    // if (progress === 0) {
-    //   bar.current?.children[1].classList.remove("active");
-    //   bar.current?.children[2].classList.remove("active");
-    // }
     if (progress === 1) {
-      setVisibility("visible");
-      setWidth("50%");
+      setBarStyle({
+        width: "50%",
+        visibility: "visible",
+        backgroundColor: "#fcd200",
+        backgroundImage:
+          "linear-gradient(to right, transparent, rgba(252, 210, 0, 0.9)), radial-gradient(#fff60d 1px, transparent 0), radial-gradient(#fff60d 1px, transparent 0)",
+      });
+      setProgressText("1");
     }
     if (progress === 2) {
-      setVisibility("visible");
-      setWidth("100%");
+      setBarStyle({
+        width: "100%",
+        visibility: "visible",
+        backgroundColor: "#86C166",
+        backgroundImage:
+          "linear-gradient(to right, transparent, rgba(34, 125, 81, 0.9)), radial-gradient(#5DAC81 1px, transparent 0), radial-gradient(#5DAC81 1px, transparent 0)",
+      });
+      setProgressText("2");
       setTimeout(() => {
-        setVisibility("hidden");
-        setWidth("0%");
-      }, 2000);
+        setBarStyle({
+          width: "0%",
+          visibility: "hidden",
+        });
+        setProgressText("0");
+      }, 1000);
     }
     if (progress === 0) {
-      setVisibility("hidden");
-      setWidth("0%");
+      setBarStyle({
+        width: "0%",
+        visibility: "hidden",
+      });
+      setProgressText("0");
     }
   }, [progress]);
 
   return render ? (
-    <div className="container feedback relative" ref={bar}>
-      <span className="w-full h-full flex text-xl">Progress</span>
-      <button className="button">
+    <div className="container feedback space-x-8 relative" ref={bar}>
+      <span className="h-full flex text-xl">Progress</span>
+      <button className="button relative flex-1">
+        <span className="button-text !absolute w-full h-full inset-0 top-1/4 left-1/4 -translate-x-1/4 -translate-y-1/4 text-xl text-purple-400 z-10">
+          {progressText} / 2
+        </span>
         <span className="button-outline">
-          <span
-            className="progress-inside"
-            style={{ width: width, visibility: visibility }}
-          >
+          <span className="progress-inside" style={batStyle}>
             <span
               className="button-text-characters-container"
               aria-hidden="true"
@@ -818,39 +869,6 @@ function Progress({ render, progress }: { render: boolean; progress: number }) {
           </span>
         </span>
       </button>
-      {/* <li className="happy relative">
-        <div>
-          <svg className="eye left">
-            <use xlinkHref="#eye" />
-          </svg>
-          <svg className="eye right">
-            <use xlinkHref="#eye" />
-          </svg>
-        </div>
-      </li>
-      <li className="happy">
-        <div>
-          <svg className="eye left">
-            <use xlinkHref="#eye" />
-          </svg>
-          <svg className="eye right">
-            <use xlinkHref="#eye" />
-          </svg>
-        </div>
-      </li>
-
-      <svg xmlns="http://www.w3.org/2000/svg" style={{ display: "none" }}>
-        <symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 4" id="eye">
-          <path d="M1,1 C1.83333333,2.16666667 2.66666667,2.75 3.5,2.75 C4.33333333,2.75 5.16666667,2.16666667 6,1"></path>
-        </symbol>
-        <symbol
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 18 7"
-          id="mouth"
-        >
-          <path d="M1,5.5 C3.66666667,2.5 6.33333333,1 9,1 C11.6666667,1 14.3333333,2.5 17,5.5"></path>
-        </symbol>
-      </svg> */}
     </div>
   ) : null;
 }

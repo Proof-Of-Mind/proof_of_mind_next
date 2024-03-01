@@ -1,12 +1,12 @@
 "use client";
+import { IUserInfo } from "@/types";
+import { getReferralCode, getUserInfo } from "@/utils/request";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useContext, useEffect, useState } from "react";
-import { ConnectContext } from "./provider/ConnectProvider";
 import copy from "copy-to-clipboard";
+import { Fragment, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { notification } from "./Notiofication";
-import { getReferralCode, getUserInfo } from "@/utils/request";
-import { IUserInfo } from "@/types";
+import { ConnectContext } from "./provider/ConnectProvider";
 
 export interface IAppProps {
   showModal: boolean;
@@ -38,15 +38,15 @@ export default function UserModal(props: IAppProps) {
             copy(
               process.env.NEXT_PUBLIC_BASE_URL + "?referralCode=" + data.data
             );
-            notification(`Copy link successfully`, "bottom-center", 1);
+            notification(`Copy link successfully`, "top-center", 1);
           } else {
-            notification(`Copy link failed`, "bottom-center", 1);
+            notification(`Copy link failed`, "top-center", 1);
           }
         });
       })
       .catch((err) => {
         console.log(err);
-        notification(`Copy link failed`, "bottom-center", 1);
+        notification(`Copy link failed`, "top-center", 1);
       });
   };
 
@@ -117,7 +117,7 @@ export default function UserModal(props: IAppProps) {
                                   "..." +
                                   address.substr(-4)
                                 } successfully`,
-                                "bottom-center",
+                                "top-center",
                                 1
                               );
                               setTimeout(() => {
@@ -129,9 +129,51 @@ export default function UserModal(props: IAppProps) {
                             {address ? address : ""}
                           </span>
                         </div>
-                        <span>Total: {userInfo?.total}</span>
-                        <span>Total Claim: {userInfo?.totalClaimed}</span>
-                        <span>Referral Earnings: {userInfo?.earnings}</span>
+                        <span>
+                          Total:
+                          <span className="cursor-pointer text-[8px] sm:text-base">
+                            &nbsp;{userInfo?.total}
+                          </span>
+                        </span>
+                        <span>
+                          Total Claim:
+                          <span className="cursor-pointer text-[8px] sm:text-base">
+                            &nbsp;{userInfo?.totalClaimed}
+                          </span>
+                        </span>
+                        <span>
+                          Referral:
+                          <span
+                            className="cursor-pointer text-[8px] sm:text-base"
+                            onClick={() => {
+                              copy(userInfo!.referralAddress);
+                              toast.dismiss();
+                              notification(
+                                `Copy ${
+                                  userInfo?.referralAddress.substr(0, 6) +
+                                  "..." +
+                                  userInfo?.referralAddress.substr(-4)
+                                } successfully`,
+                                "top-center",
+                                1
+                              );
+                              setTimeout(() => {
+                                toast.dismiss();
+                              }, 2000);
+                            }}
+                          >
+                            &nbsp;
+                            {userInfo?.referralAddress
+                              ? userInfo?.referralAddress
+                              : ""}
+                          </span>
+                        </span>
+                        <span>
+                          Referral Earnings:
+                          <span className="cursor-pointer text-[8px] sm:text-base">
+                            &nbsp;{userInfo?.earnings}
+                          </span>
+                        </span>
                         <button
                           className="button pl-1"
                           onClick={() => handleCopyLink()}
