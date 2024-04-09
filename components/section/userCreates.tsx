@@ -1,13 +1,7 @@
 "use client";
 
 import { Transition } from "@headlessui/react";
-import {
-  useContext,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import Particles from "./particles";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -21,7 +15,7 @@ interface Item {
 
 export default function UserCreates() {
   const [active, setActive] = useState<number>(0);
-  const { address, p } = useContext(ConnectContext);
+  const { publicKey, signMessage } = useWallet();
   const childRef = useRef<HTMLDivElement>(null);
 
   const [showBurnModal, setShowBurnModal] = useState<boolean>(false);
@@ -31,21 +25,21 @@ export default function UserCreates() {
     {
       img: "/images/gavtar.png",
       quote:
-        "Cons succeed for inducing judgment errors—chiefly, errors arising from imperfect information and cognitive biases.",
+        "Gold is a treasure, and he who possesses it does all he wishes to in this world.",
       name: "Gold Creates",
       role: "Ltd Head of Product",
     },
     {
       img: "/images/savtar.png",
       quote:
-        "The relationship begins on the internet, but extends into real life interaction.",
+        "Silver and gold are not the only coin, virtue too passes current all over the world.",
       name: "Silver Creates",
       role: "Spark Founder & CEO",
     },
     {
       img: "/images/bavtar.png",
       quote:
-        "The most difficult human skills to reverse engineer are those that are below the level of conscious awareness. we're more aware of simple processes that don't work well than of complex ones that work flawlessly.",
+        "Bronze is the mirror of the form, yea, a mirror of his face who holds it.",
       name: "Bronze Creates",
       role: "Appy Product Lead",
     },
@@ -64,13 +58,13 @@ export default function UserCreates() {
       id2.toString()
     );
     // @ts-ignore
-    const result = await (window as any).okxwallet.bitcoin.signMessage(
-      message,
-      {
-        from: address,
-        type: "ecdsa",
-      }
-    );
+    // const result = await signMessage(message, {
+    //   from: publicKey?.toBase58(),
+    //   type: "ecdsa",
+    // });
+    const signInfo = new TextEncoder().encode(message);
+    // @ts-ignore
+    const result = await signMessage(signInfo);
     const hashMessage1 = crypto.sha256(Buffer.from(nonce1)).toString("hex");
     const hashMessage2 = crypto.sha256(Buffer.from(nonce2)).toString("hex");
 
@@ -85,10 +79,10 @@ export default function UserCreates() {
       },
     ];
     burnGold({
-      p: p,
+      p: publicKey?.toString(),
       projectId: 0,
-      signature: result,
-      address: address,
+      signature: bs58.encode(result),
+      address: publicKey?.toBase58(),
       goldNonceList: goldNonceList,
     })
       .then((response) => {
@@ -231,7 +225,7 @@ export default function UserCreates() {
                   />
                   <label htmlFor="slideThree"></label>
                 </div>
-                {address ? (
+                {publicKey?.toBase58() ? (
                   <button
                     onClick={() => setShowBurnModal(true)}
                     className="btn-sm text-white bg-purple-600 hover:bg-purple-700 mx-3 min-w-[132px]"
@@ -286,6 +280,7 @@ import {
   revealGold,
 } from "@/utils/request";
 import { crypto } from "@okxweb3/coin-bitcoin";
+import { useWallet } from "@solana/wallet-adapter-react";
 import copy from "copy-to-clipboard";
 import localforage from "localforage";
 import toast from "react-hot-toast";
@@ -293,7 +288,7 @@ import { useInfiniteQuery } from "react-query";
 import BurnModal from "../BurnModal";
 import GoldModal from "../GoldModal";
 import { notification } from "../Notiofication";
-import { ConnectContext } from "../provider/ConnectProvider";
+import bs58 from "bs58";
 
 function CreatesList({
   active,
@@ -304,7 +299,8 @@ function CreatesList({
   showCreates: boolean;
   onRef: any;
 }) {
-  const { address, p } = useContext(ConnectContext);
+  // const { address, p } = useContext(ConnectContext);
+  const { publicKey, signMessage } = useWallet();
   const [showResult, setShowResult] = useState<boolean>(false);
   const [resultInfo, setResultInfo] = useState<string>("");
 
@@ -319,7 +315,7 @@ function CreatesList({
 
   async function fetchServerPage(
     projectId: number,
-    address: string,
+    address: string | undefined,
     type: string,
     page: number = 0
   ): Promise<{ rows: IUserCreates[]; hasNextPage: boolean; page: number }> {
@@ -349,9 +345,9 @@ function CreatesList({
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery(
-    ["projects", projectId, address, active],
+    ["projects", projectId, publicKey?.toBase58(), active],
     ({ pageParam = 1 }) =>
-      fetchServerPage(projectId, address, active, pageParam),
+      fetchServerPage(projectId, publicKey?.toBase58(), active, pageParam),
     {
       getNextPageParam: (_lastGroup, groups) => {
         return _lastGroup.hasNextPage ? _lastGroup.page + 1 : undefined;
@@ -372,7 +368,7 @@ function CreatesList({
   };
 
   const handleGoldDetail = (mintId: number) => {
-    getGoldPairDetail(0, address, mintId)
+    getGoldPairDetail(0, publicKey!.toBase58(), mintId)
       .then((response) => {
         response.json().then((data: any) => {
           if (data.code === 200) {
@@ -389,25 +385,22 @@ function CreatesList({
   const handleRevealGold = async (id: number, nonce: string) => {
     const hashMessage = crypto.sha256(Buffer.from(nonce)).toString("hex");
     nonce = CLAIM_CREATES.replace("$", hashMessage);
+    const signInfo = new TextEncoder().encode(publicKey?.toBase58());
+
     // @ts-ignore
-    const result = await (window as any).okxwallet.bitcoin
-      .signMessage(address, {
-        from: address,
-        type: "ecdsa",
-      })
-      .catch((err: any) => {
-        notification("User cancel");
-        return;
-      });
+    const result = await signMessage(signInfo).catch((err: any) => {
+      notification("User cancel");
+      return;
+    });
 
     if (result) {
       revealGold({
         projectId: 0,
         goldId: id,
-        p: p,
-        address: address,
+        p: publicKey?.toString(),
+        address: publicKey?.toBase58(),
         message: nonce,
-        signature: result,
+        signature: bs58.encode(result),
       })
         .then((response) => {
           response.json().then((data: any) => {
@@ -476,7 +469,7 @@ function CreatesList({
       return;
     }
     if (
-      address &&
+      publicKey!.toBase58() &&
       !showCreates &&
       lastItem.index >= allRows.length - 1 &&
       hasNextPage &&
@@ -485,7 +478,7 @@ function CreatesList({
       fetchNextPage();
     }
   }, [
-    address,
+    publicKey?.toBase58(),
     showCreates,
     hasNextPage,
     fetchNextPage,
@@ -513,7 +506,7 @@ function CreatesList({
         </div>
       ) : status === "error" ? (
         <span>Error: {(error as Error).message}</span>
-      ) : address ? (
+      ) : publicKey ? (
         allRows.length > 0 ? (
           <div>
             {isFetching && !isFetchingNextPage ? (
@@ -616,7 +609,7 @@ function CreatesList({
                                     <h1
                                       onClick={() => {
                                         localforage
-                                          .getItem(address)
+                                          .getItem(publicKey!.toBase58())
                                           .then((value: any) => {
                                             if (value && value.length > 0) {
                                               value.forEach(

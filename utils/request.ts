@@ -16,7 +16,7 @@ const getUserInfo = (projectId: number, address: string) => {
     })
 }
 
-const getReferralCode = (projectId: number, address: string) => {
+const getReferralCode = (projectId: number, address: string | undefined) => {
     return fetch("api/user/getReferralCode/" + projectId + "/" + address, {
         method: "GET",
         mode: "cors",

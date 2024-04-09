@@ -1,9 +1,4 @@
 "use client";
-// export const metadata = {
-//   title: "Proof Of Mind",
-//   description: "A distribute protocol based on recaptcha.",
-// };
-
 import Advance from "@/components/section/advance";
 import Captcha from "@/components/section/captcha";
 import Clients from "@/components/section/clients";
@@ -15,16 +10,25 @@ import { QueryClient, QueryClientProvider } from "react-query";
 const queryClient = new QueryClient();
 
 export default function Home() {
+  // const network = WalletAdapterNetwork.Mainnet;
+  // const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  // const wallets = useMemo(() => [new UnsafeBurnerWalletAdapter()], [network]);
   return (
     <>
-      <QueryClientProvider client={queryClient}>
-        <Advance />
-        <Clients />
-        <Captcha />
-        <TotalInfo />
-        <FeaturesFast />
-        <UserCreates />
-      </QueryClientProvider>
+      {/* <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider> */}
+            <QueryClientProvider client={queryClient}>
+              <Advance />
+              <Clients />
+              <Captcha />
+              <TotalInfo />
+              <FeaturesFast />
+              <UserCreates />
+            </QueryClientProvider>
+          {/* </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider> */}
     </>
   );
 }

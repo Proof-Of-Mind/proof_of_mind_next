@@ -32,7 +32,7 @@
 /* Buttons */
 .btn,
 .btn-sm {
-  @apply text-sm font-medium inline-flex items-center justify-center border border-transparent rounded-[.1875rem] transition duration-150 ease-in-out outline outline-white;
+  @apply h-[42px] text-sm font-medium inline-flex items-center justify-center border border-transparent rounded-[.1875rem] transition duration-150 ease-in-out outline outline-white;
 }
 
 .btn {

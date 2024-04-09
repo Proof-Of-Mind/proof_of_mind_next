@@ -2,11 +2,11 @@
 import { IUserInfo } from "@/types";
 import { getReferralCode, getUserInfo } from "@/utils/request";
 import { Dialog, Transition } from "@headlessui/react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import copy from "copy-to-clipboard";
-import { Fragment, useContext, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { notification } from "./Notiofication";
-import { ConnectContext } from "./provider/ConnectProvider";
 
 export interface IAppProps {
   showModal: boolean;
@@ -16,8 +16,7 @@ export interface IAppProps {
 }
 
 export default function UserModal(props: IAppProps) {
-  const { address } = useContext(ConnectContext);
-
+  const { publicKey } = useWallet();
   const [userInfo, setUserInfo] = useState<IUserInfo>();
 
   const getUserDetail = (projectId: number, address: string) => {
@@ -31,7 +30,7 @@ export default function UserModal(props: IAppProps) {
   };
 
   const handleCopyLink = () => {
-    getReferralCode(0, address)
+    getReferralCode(0, publicKey?.toBase58())
       .then((res) => {
         res.json().then((data) => {
           if (data.code === 200) {
@@ -51,10 +50,10 @@ export default function UserModal(props: IAppProps) {
   };
 
   useEffect(() => {
-    if (address && props.showModal) {
-      getUserDetail(0, address);
+    if (publicKey?.toBase58() && props.showModal) {
+      getUserDetail(0, publicKey!.toBase58());
     }
-  }, [address, props.showModal]);
+  }, [publicKey?.toBase58(), props.showModal]);
 
   return (
     <Transition.Root show={props.showModal} as={Fragment}>
@@ -109,13 +108,13 @@ export default function UserModal(props: IAppProps) {
                           <span
                             className="cursor-pointer text-[8px] sm:text-base"
                             onClick={() => {
-                              copy(address);
+                              copy(publicKey!.toBase58());
                               toast.dismiss();
                               notification(
                                 `Copy ${
-                                  address.substr(0, 6) +
+                                  publicKey!.toBase58().substr(0, 6) +
                                   "..." +
-                                  address.substr(-4)
+                                  publicKey!.toBase58().substr(-4)
                                 } successfully`,
                                 "top-center",
                                 1
@@ -126,7 +125,7 @@ export default function UserModal(props: IAppProps) {
                             }}
                           >
                             {" "}
-                            {address ? address : ""}
+                            {publicKey ? publicKey.toBase58() : ""}
                           </span>
                         </div>
                         <span>

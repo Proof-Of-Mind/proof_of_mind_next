@@ -1,6 +1,6 @@
 interface UserCreatesReq {
     projectId: number,
-    address: string,
+    address: string | undefined,
     type: string,
     pageNum: number
 }

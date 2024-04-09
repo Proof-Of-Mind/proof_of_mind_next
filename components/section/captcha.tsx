@@ -12,6 +12,7 @@ import {
 } from "@/utils/request";
 import { Transition } from "@headlessui/react";
 import { crypto } from "@okxweb3/coin-bitcoin";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import localforage from "localforage";
 import { useSearchParams } from "next/navigation";
 import Swiper, { Autoplay } from "swiper";
@@ -20,12 +21,13 @@ import BaseModal from "../BaseModal";
 import InfoModal from "../InfoModal";
 import { notification } from "../Notiofication";
 import ResultModal from "../ResultModal";
-import { ConnectContext } from "../provider/ConnectProvider";
 import { useLoading } from "../provider/LoadingProvider";
 import { ModalContext } from "../provider/ModalProvider";
 import TotalNumber from "../ui/TotalNumber";
 import LoadingAny from "../ui/loadingAny";
 import Particles from "./particles";
+import bs58 from "bs58";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 Swiper.use([Autoplay]);
 
 export default function Captcha() {
@@ -40,23 +42,25 @@ export default function Captcha() {
 
   const searchParams = useSearchParams();
 
-  const { address, p, isConnected } = useContext(ConnectContext);
+  const { publicKey, connected, signMessage } = useWallet();
 
   useEffect(() => {
-    if (isConnected) {
-      getUserTotal(address).then((response: { json: () => Promise<any> }) => {
-        response.json().then((data: any) => {
-          if (data.code === 200 && data.data && data.data !== "0") {
-            if (data.data.current === 2) {
-              setProgress(0);
-            } else {
-              setProgress(Number(data.data.current));
+    if (connected) {
+      getUserTotal(publicKey!.toBase58()).then(
+        (response: { json: () => Promise<any> }) => {
+          response.json().then((data: any) => {
+            if (data.code === 200 && data.data && data.data !== "0") {
+              if (data.data.current === 2) {
+                setProgress(0);
+              } else {
+                setProgress(Number(data.data.current));
+              }
+              setTotal(Number(data.data.total));
+              setMintCount(Number(data.data.mintCount));
             }
-            setTotal(Number(data.data.total));
-            setMintCount(Number(data.data.mintCount));
-          }
-        });
-      });
+          });
+        }
+      );
 
       const referralCode = searchParams.get("referralCode");
       if (referralCode) {
@@ -65,24 +69,24 @@ export default function Captcha() {
         setShowReferral(true);
       }
     }
-  }, [address, isConnected]);
+  }, [publicKey, connected]);
 
   const handleSetReferral = async (referralCode: string) => {
     setShowReferral(false);
-    const message = SET_REFERRAL.replace("$", address);
+    const message = SET_REFERRAL.replace("$", publicKey!.toBase58());
+    const signInfo = new TextEncoder().encode(message);
     // @ts-ignore
-    const result = await (window as any).okxwallet.bitcoin
-      .signMessage(message, { from: address, type: "ecdsa" })
-      .catch((err: any) => {
-        notification("User cancel");
-        return;
-      });
+    const result = await signMessage(signInfo).catch((err: any) => {
+      console.log(err);
+      notification("User cancel");
+      return;
+    });
     if (result) {
       setUserReferralCode({
-        p: p,
+        p: publicKey!.toBase58(),
         projectId: 0,
-        signature: result,
-        address: address,
+        signature: bs58.encode(result),
+        address: publicKey!.toBase58(),
         referralCode: referralCode,
       })
         .then((response: { json: () => Promise<any> }) => {
@@ -103,85 +107,85 @@ export default function Captcha() {
 
   // let reqId = "";
 
-  const initGeetest4 = () => {
-    const win: any = typeof window !== "undefined" ? window : undefined;
-    win.initGeetest4(
-      {
-        captchaId: process.env.NEXT_PUBLIC_SITE_KEY,
-        language: "eng",
-        product: "bind",
-        mask: {
-          bgColor: "rgba(14, 0, 0, 0.7)",
-        },
-      },
-      function (captcha: any) {
-        captcha
-          .onReady(function () {
-            document.getElementsByClassName("geetest_box_logo")[0].remove();
-            document.getElementsByClassName("geetest_feedback")[0].remove();
-          })
-          .onSuccess(function () {
-            const result = captcha.getValidate();
-            checkToken({
-              token: JSON.stringify(result),
-              address: address,
-              reqId: "0",
-              projectId: 0,
-            })
-              .then((response: { json: () => Promise<any> }) => {
-                response.json().then((data: any) => {
-                  if (data.code === 200 && data.data) {
-                    const info: string = data.data;
-                    const process = Number(info.split("$")[1]);
-                    if (process === 2) {
-                      setProgress(2);
-                      setTimeout(() => {
-                        setMintCount(Number(info.split("$")[2]));
-                      }, 1000);
-                    } else {
-                      setProgress(process);
-                    }
-                    setTotal(Number(info.split("$")[0]));
-                    notification("Check Captcha success", "top-center", 1);
-                  } else {
-                    notification("Check Captcha fail");
-                  }
-                });
-              })
-              .catch((err: any) => {
-                notification("Check Captcha fail");
-              });
-          })
-          .onFail(function () {});
-        document
-          .getElementById("gtButton")!
-          .addEventListener("click", function () {
-            captcha.showCaptcha();
-            // getReqId(address, 0)
-            //   .then((response: { json: () => Promise<any> }) => {
-            //     response.json().then((data: any) => {
-            //       if (data.code === 200) {
-            //         reqId = data.data;
-            //         captcha.showCaptcha();
-            //       } else {
-            //         notification("Check Captcha fail");
-            //       }
-            //     });
-            //   })
-            //   .catch((err: any) => {
-            //     notification("Check Captcha fail");
-            //   });
-          });
-      }
-    );
-  };
+  // const initGeetest4 = () => {
+  //   const win: any = typeof window !== "undefined" ? window : undefined;
+  //   win.initGeetest4(
+  //     {
+  //       captchaId: process.env.NEXT_PUBLIC_SITE_KEY,
+  //       language: "eng",
+  //       product: "bind",
+  //       mask: {
+  //         bgColor: "rgba(14, 0, 0, 0.7)",
+  //       },
+  //     },
+  //     function (captcha: any) {
+  //       captcha
+  //         .onReady(function () {
+  //           document.getElementsByClassName("geetest_box_logo")[0].remove();
+  //           document.getElementsByClassName("geetest_feedback")[0].remove();
+  //         })
+  //         .onSuccess(function () {
+  //           const result = captcha.getValidate();
+  //           checkToken({
+  //             token: JSON.stringify(result),
+  //             address: publicKey!.toBase58(),
+  //             reqId: "0",
+  //             projectId: 0,
+  //           })
+  //             .then((response: { json: () => Promise<any> }) => {
+  //               response.json().then((data: any) => {
+  //                 if (data.code === 200 && data.data) {
+  //                   const info: string = data.data;
+  //                   const process = Number(info.split("$")[1]);
+  //                   if (process === 2) {
+  //                     setProgress(2);
+  //                     setTimeout(() => {
+  //                       setMintCount(Number(info.split("$")[2]));
+  //                     }, 1000);
+  //                   } else {
+  //                     setProgress(process);
+  //                   }
+  //                   setTotal(Number(info.split("$")[0]));
+  //                   notification("Check Captcha success", "top-center", 1);
+  //                 } else {
+  //                   notification("Check Captcha fail");
+  //                 }
+  //               });
+  //             })
+  //             .catch((err: any) => {
+  //               notification("Check Captcha fail");
+  //             });
+  //         })
+  //         .onFail(function () {});
+  //       document
+  //         .getElementById("gtButton")!
+  //         .addEventListener("click", function () {
+  //           captcha.showCaptcha();
+  //           // getReqId(address, 0)
+  //           //   .then((response: { json: () => Promise<any> }) => {
+  //           //     response.json().then((data: any) => {
+  //           //       if (data.code === 200) {
+  //           //         reqId = data.data;
+  //           //         captcha.showCaptcha();
+  //           //       } else {
+  //           //         notification("Check Captcha fail");
+  //           //       }
+  //           //     });
+  //           //   })
+  //           //   .catch((err: any) => {
+  //           //     notification("Check Captcha fail");
+  //           //   });
+  //         });
+  //     }
+  //   );
+  // };
 
-  useEffect(() => {
-    if (isConnected && !renderedGt) {
-      initGeetest4();
-      setRenderedGt(true);
-    }
-  }, [isConnected, renderedGt]);
+  // useEffect(() => {
+  //   if (connected && !renderedGt) {
+  //     initGeetest4();
+  //     setRenderedGt(true);
+  //   }
+  // }, [connected, renderedGt]);
 
   return (
     <section id="captcha">
@@ -203,20 +207,6 @@ export default function Captcha() {
           </div>
         </div>
         {/* Illustration */}
-        {/* <div
-          className="absolute inset-0 -z-10 -mx-28 rounded-t-[3rem] pointer-events-none overflow-hidden"
-          aria-hidden="true"
-        >
-          <div className="absolute left-1/2 -translate-x-1/2 top-0 -z-10">
-            <Image
-              src={Illustration}
-              className="max-w-none"
-              width={1404}
-              height={658}
-              alt="Features Illustration"
-            />
-          </div>
-        </div> */}
 
         <div className="pt-16 pb-12 md:pt-52 md:pb-20">
           <div>
@@ -238,8 +228,8 @@ export default function Captcha() {
                       : `mt-8  max-md:mx-auto space-y-2`
                   }
                 >
-                  <div
-                    // id="h-captcha"
+                  {/* <div
+                    id="h-captcha"
                     className={render ? "visible" : "invisible"}
                   >
                     <button id="gtButton" className="button w-full">
@@ -255,8 +245,11 @@ export default function Captcha() {
                         </span>
                       </span>
                     </button>
-                  </div>
-                  <div id="h-captcha"></div>
+                  </div> */}
+                  <div
+                    id="h-captcha"
+                    className={render ? "visible flex justify-center" : "invisible"}
+                  ></div>
                 </div>
                 <div className="mt-8 max-md:mx-auto flex flex-col space-y-4 md:space-y-0 md:flex-row justify-between items-center w-full">
                   <Mint
@@ -480,7 +473,6 @@ export default function Captcha() {
                   </div>
                 </div>
               </div>
-              
             </div>
           </div>
         </div>
@@ -502,57 +494,62 @@ function Interactive({
   setMintCount: Function;
   setTotal: Function;
 }) {
-  const { address, isConnected, connect } = useContext(ConnectContext);
+  const { setVisible: setModalVisible } = useWalletModal();
+  const { publicKey, connected } = useWallet();
   const [rendered, setRendered] = useState<boolean>(false);
 
   const handleGetRecaptcha = () => {
-    // const win: any = typeof window !== "undefined" ? window : undefined;
-    // if (!win || !win.grecaptcha) return;
-    // if (!address || !isConnected) {
-    //   return;
-    // }
-    // const hSiteKey = "062c5788-64fb-45a8-b05c-1d4371cb32fd";
-    // return new Promise((res) => {
-    //   win.hcaptcha.render("h-captcha", {
-    //     sitekey: hSiteKey,
-    //     theme: "dark",
-    //     "open-callback": onOpened,
-    //     // "close-callback": onClosed,
-    //     callback: (token: any) => {
-    //       checkToken(token, address)
-    //         .then((response: { json: () => Promise<any> }) => {
-    //           response.json().then((data: any) => {
-    //             if (data.code === 200) {
-    //               const info: string = data.data;
-    //               const process = Number(info.split("$")[1]);
-    //               if (process === 2) {
-    //                 setProgress(2);
-    //                 setMintCount(Number(info.split("$")[2]));
-    //               } else {
-    //                 setProgress(process);
-    //               }
-    //               setTotal(Number(info.split("$")[0]));
-    //               res("success");
-    //             } else {
-    //               res("fail");
-    //             }
-    //           });
-    //         })
-    //         .catch((err: any) => {
-    //           console.log(err);
-    //           res("fail");
-    //         })
-    //         .finally(() => {
-    //           win.grecaptcha.reset();
-    //         });
-    //     },
-    //   });
-    // });
+    const win: any = typeof window !== "undefined" ? window : undefined;
+    if (!win || !win.grecaptcha) return;
+    if (!publicKey || !connected) {
+      return;
+    }
+    const hSiteKey = "062c5788-64fb-45a8-b05c-1d4371cb32fd";
+    return new Promise((res) => {
+      win.hcaptcha.render("h-captcha", {
+        sitekey: hSiteKey,
+        theme: "dark",
+        callback: (token: any) => {
+          let params = {
+            token: token,
+            address: publicKey!.toBase58(),
+            reqId: "0",
+            projectId: 0,
+          };
+          checkToken(params)
+            .then((response: { json: () => Promise<any> }) => {
+              response.json().then((data: any) => {
+                if (data.code === 200) {
+                  const info: string = data.data;
+                  const process = Number(info.split("$")[1]);
+                  if (process === 2) {
+                    setProgress(2);
+                    setMintCount(Number(info.split("$")[2]));
+                  } else {
+                    setProgress(process);
+                  }
+                  setTotal(Number(info.split("$")[0]));
+                  res("success");
+                } else {
+                  res("fail");
+                }
+              });
+            })
+            .catch((err: any) => {
+              console.log(err);
+              res("fail");
+            })
+            .finally(() => {
+              win.grecaptcha.reset();
+            });
+        },
+      });
+    });
   };
 
   const handleSubmitRecaptcha = async () => {
-    if (!isConnected) {
-      await connect();
+    if (!connected) {
+      await setModalVisible(true);
       return;
     }
     if (!render) {
@@ -563,7 +560,7 @@ function Interactive({
   };
 
   useEffect(() => {
-    if (address && isConnected) {
+    if (publicKey && connected) {
       setRender(true);
       if (rendered) {
         return;
@@ -573,7 +570,7 @@ function Interactive({
     } else {
       setRender(false);
     }
-  }, [address, isConnected]);
+  }, [publicKey, connected]);
   return !render ? (
     <div
       className="skill-outer interactive cursor-pointer w-full h-full flex justify-center items-start"
@@ -607,7 +604,7 @@ function Mint({
   setTotal: Function;
   setMintCount: Function;
 }) {
-  const { address, p } = useContext(ConnectContext);
+  const { publicKey, signMessage } = useWallet();
 
   const { isLoading, showLoading, hideLoading } = useLoading();
 
@@ -657,22 +654,22 @@ function Mint({
 
     const hashMessage = crypto.sha256(Buffer.from(message)).toString("hex");
     message = CLAIM_CREATES.replace("$", hashMessage);
+
+    const signInfo = new TextEncoder().encode(message);
     // @ts-ignore
-    const result = await (window as any).okxwallet.bitcoin
-      .signMessage(message, { from: address, type: "ecdsa" })
-      .catch((err: any) => {
-        notification("User cancel");
-        hideLoading();
-        return;
-      });
+    const result = await signMessage(signInfo).catch((err: any) => {
+      notification("User cancel");
+      hideLoading();
+      return;
+    });
 
     if (result) {
       mintCreates({
-        address: address,
-        signature: result,
+        address: publicKey!.toBase58(),
+        signature: bs58.encode(result),
         projectId: 0,
         typedMessage: {
-          p: p,
+          p: publicKey!.toBase58(),
           message: message,
           type: type,
         },
@@ -687,7 +684,7 @@ function Mint({
               }
               setShowResult(true);
               setResultInfo(data.data);
-              getUserTotal(address).then(
+              getUserTotal(publicKey!.toBase58()).then(
                 (response: { json: () => Promise<any> }) => {
                   response.json().then((data: any) => {
                     if (data.code === 200 && data.data !== "0") {
@@ -710,13 +707,13 @@ function Mint({
                       hex: item.randomHex,
                     };
                     localforage
-                      .getItem(address)
+                      .getItem(publicKey!.toBase58())
                       .then((value: any) => {
                         if (value && value.length > 0) {
                           value.push(gold);
-                          localforage.setItem(address, value);
+                          localforage.setItem(publicKey!.toBase58(), value);
                         } else {
-                          localforage.setItem(address, [gold]);
+                          localforage.setItem(publicKey!.toBase58(), [gold]);
                         }
                       })
                       .catch((err) => {

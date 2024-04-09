@@ -1,9 +1,9 @@
 interface RevealGold {
-    p: string;
+    p: string | undefined;
     projectId: number;
     signature: string;
     goldId: number;
-    address: string;
+    address: string | undefined;
     message: string;
 }
 

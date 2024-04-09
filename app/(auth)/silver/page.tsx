@@ -1,6 +1,5 @@
 "use client";
 import { notification } from "@/components/Notiofication";
-import { ConnectContext } from "@/components/provider/ConnectProvider";
 import { useLoading } from "@/components/provider/LoadingProvider";
 import Particles from "@/components/section/particles";
 import LoadingAny from "@/components/ui/loadingAny";
@@ -10,19 +9,21 @@ import {
   getSilverCount,
 } from "@/utils/request";
 import { Transition } from "@headlessui/react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useSearchParams } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const Silver = () => {
   const [render, setRender] = useState<boolean>(false);
   const [checkClaimed, setCheckClaimed] = useState<boolean>(false);
   const [silverCount, setSilverCount] = useState<number>(0);
   const searchParams = useSearchParams();
-  const { address, check, connect } = useContext(ConnectContext);
+  const { connect, publicKey, connected } = useWallet();
+
   const { isLoading, showLoading, hideLoading } = useLoading();
 
   const getCount = () => {
-    if (address) {
+    if (publicKey!.toBase58()) {
       const link = searchParams.get("link");
       getSilverCount(0, link as string).then((response) => {
         response.json().then((data: any) => {
@@ -35,9 +36,9 @@ const Silver = () => {
   };
 
   const checkAlreadyClaimSilverCreates = () => {
-    if (address) {
+    if (publicKey!.toBase58()) {
       const link = searchParams.get("link");
-      checkAlreadyClaimSilver(0, address, link as string)
+      checkAlreadyClaimSilver(0, publicKey!.toBase58(), link as string)
         .then((response) => {
           response.json().then((data: any) => {
             if (data.code === 200) {
@@ -58,7 +59,7 @@ const Silver = () => {
     showLoading();
     const link = searchParams.get("link");
     claimSilverShare({
-      address: address,
+      address: publicKey!.toBase58(),
       projectId: 0,
       link: link as string,
     })
@@ -78,11 +79,11 @@ const Silver = () => {
   };
 
   useEffect(() => {
-    if (address) {
+    if (publicKey!.toBase58()) {
       getCount();
       checkAlreadyClaimSilverCreates();
     } else {
-      const flag = check();
+      const flag = connected;
       if (!flag) {
         console.error("connect wallet error");
         notification(
@@ -94,7 +95,7 @@ const Silver = () => {
         connect();
       }
     }
-  }, [address]);
+  }, [publicKey!.toBase58()]);
 
   return (
     <>

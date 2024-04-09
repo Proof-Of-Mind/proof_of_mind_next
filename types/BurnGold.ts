@@ -1,8 +1,8 @@
 interface BurnGold {
-    p: string;
+    p: string | undefined;
     projectId: number;
     signature: string;
-    address: string;
+    address: string | undefined;
     goldNonceList: GoldNonce[];
 }
 

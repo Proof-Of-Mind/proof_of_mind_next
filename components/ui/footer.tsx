@@ -18,7 +18,7 @@ export default function Footer() {
                 <li>
                   <a
                     className="flex justify-center items-center text-purple-500 hover:text-purple-400 transition duration-150 ease-in-out"
-                    href="#0"
+                    href="https://twitter.com/POM_WTF"
                     aria-label="Twitter"
                   >
                     <svg
@@ -33,7 +33,7 @@ export default function Footer() {
                 <li className="ml-2">
                   <a
                     className="flex justify-center items-center text-purple-500 hover:text-purple-400 transition duration-150 ease-in-out"
-                    href="#0"
+                    href="https://aiia.gitbook.io/pom"
                     aria-label="Github"
                   >
                     <svg

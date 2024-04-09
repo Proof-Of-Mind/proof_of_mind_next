@@ -1,38 +1,40 @@
 "use client";
 
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
-import { useContext, useEffect, useState } from "react";
-import { notification } from "../../components/Notiofication";
+import { useState } from "react";
 import UserModal from "../UserModal";
-import { ConnectContext } from "../provider/ConnectProvider";
 
 export default function Header() {
-  const { address, isConnected, check, connect, disconnect } =
-    useContext(ConnectContext);
+  // const { address, isConnected, check, connect, disconnect } =
+  //   useContext(ConnectContext);
+
+  const { publicKey } = useWallet();
 
   const [showModal, setShowModal] = useState(false);
 
-  const handleConnectWallet = () => {
-    const flag = check();
-    if (!flag) {
-      console.error("connect wallet error");
-      notification(
-        "Please install wallet or select supported browser",
-        "top-center",
-        3
-      );
-      return;
-    }
-    if (!isConnected) {
-      connect();
-    } else {
-      disconnect();
-    }
-  };
+  // const handleConnectWallet = () => {
+  //   const flag = check();
+  //   if (!flag) {
+  //     console.error("connect wallet error");
+  //     notification(
+  //       "Please install wallet or select supported browser",
+  //       "top-center",
+  //       3
+  //     );
+  //     return;
+  //   }
+  //   if (!isConnected) {
+  //     connect();
+  //   } else {
+  //     disconnect();
+  //   }
+  // };
 
-  useEffect(() => {
-    handleConnectWallet();
-  }, []);
+  // useEffect(() => {
+  //   handleConnectWallet();
+  // }, []);
 
   return (
     <header className="absolute w-full z-30">
@@ -54,52 +56,10 @@ export default function Header() {
 
           {/* Desktop navigation */}
           <nav className="hidden md:flex md:grow">
-            {/* <ul className="flex grow justify-end flex-wrap items-center">
-              <li>
-                <Link href="/features" className="text-gray-300 hover:text-gray-200 px-4 py-2 flex items-center transition duration-150 ease-in-out">
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-gray-300 hover:text-gray-200 px-4 py-2 flex items-center transition duration-150 ease-in-out">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-300 hover:text-gray-200 px-4 py-2 flex items-center transition duration-150 ease-in-out">
-                  About us
-                </Link>
-              </li>
-              <Dropdown title="Support">
-                <li>
-                  <Link href="/contact" className="font-medium text-sm text-gray-400 hover:text-purple-600 flex py-2 px-4 leading-tight">
-                    Contact us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/help/frequently-asked-questions" className="font-medium text-sm text-gray-400 hover:text-purple-600 flex py-2 px-4 leading-tight">
-                    Help center
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/404" className="font-medium text-sm text-gray-400 hover:text-purple-600 flex py-2 px-4 leading-tight">
-                    404
-                  </Link>
-                </li>
-              </Dropdown>
-            </ul> */}
-
             <ul className="flex grow justify-end flex-wrap items-center">
-              <li className="ml-3">
-                <button
-                  className="btn-sm text-white bg-purple-600 hover:bg-purple-700 mx-3 min-w-[132px]"
-                  onClick={handleConnectWallet}
-                >
-                  {isConnected
-                    ? address.substr(0, 6) + "..." + address.substr(-4)
-                    : "Connect Wallet"}
-                </button>
-                {address ? (
+              <li className="ml-3 flex justify-center items-center">
+                <WalletMultiButton className="text-white bg-purple-600 hover:bg-purple-700 mx-3" />
+                {publicKey ? (
                   <button
                     onClick={() => setShowModal(true)}
                     className="btn-sm text-white bg-purple-600 hover:bg-purple-700 mx-3"
@@ -112,16 +72,9 @@ export default function Header() {
           </nav>
 
           <div className="md:hidden">
-            <button
-              className="btn-sm text-white bg-purple-600 hover:bg-purple-700 min-w-[132px]"
-              onClick={handleConnectWallet}
-            >
-              {isConnected
-                ? address.substr(0, 6) + "..." + address.substr(-4)
-                : "Connect Wallet"}
-            </button>
+            <WalletMultiButton className="text-white bg-purple-600 hover:bg-purple-700 mx-3" />
           </div>
-          {address ? (
+          {publicKey ? (
             <div className="md:hidden">
               <button
                 onClick={() => setShowModal(true)}
@@ -138,8 +91,6 @@ export default function Header() {
             title="User Info"
             button="Close"
           />
-
-          {/* <MobileMenu /> */}
         </div>
       </div>
     </header>
