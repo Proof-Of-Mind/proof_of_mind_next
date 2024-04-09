@@ -4,10 +4,23 @@ import Particles from "./particles";
 
 export default function TotalInfo() {
   const [currentStage, setCurrentStage] = useState(0);
+  const [holders, setHolders] = useState(0);
   const currentRate = useMemo(() => {
     return (((1000000000 - currentStage) / 1000000000) * 100).toFixed(2);
   }, [currentStage]);
-  const [holders, setHolders] = useState(0);
+  const currentStageString = useMemo(() => {
+    let str = currentStage.toLocaleString("en-US");
+    let reg =
+      str.indexOf(".") > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(?:\d{3})+$)/g;
+    return str.replace(reg, "$1,");
+  }, [currentStage]);
+
+  const hodersString = useMemo(() => {
+    let str = holders.toLocaleString("en-US");
+    let reg =
+      str.indexOf(".") > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(?:\d{3})+$)/g;
+    return str.replace(reg, "$1,");
+  }, [holders]);
 
   useEffect(() => {
     getCurrentStage(0).then((res) => {
@@ -99,12 +112,12 @@ export default function TotalInfo() {
               <div className="btn justify-between text-slate-900 bg-gradient-to-r from-white/80 via-white to-white/80 hover:bg-white w-full transition duration-150 ease-in-out group">
                 <span>Current Stage</span>
                 <span>
-                  {currentStage} / 1000000000 ({currentRate}%)
+                  {currentStageString} / 1,000,000,000 ({currentRate}%)
                 </span>
               </div>
               <div className="btn justify-between text-slate-200 hover:text-white bg-slate-900 bg-opacity-25 hover:bg-opacity-30 w-full transition duration-150 ease-in-out">
                 <span>Holders: </span>
-                <span>{holders}</span>
+                <span>{hodersString}</span>
               </div>
             </div>
           </div>

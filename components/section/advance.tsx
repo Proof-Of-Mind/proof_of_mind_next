@@ -130,7 +130,7 @@ export default function Advance() {
               <div>
                 <a
                   className="btn text-slate-200 hover:text-white bg-slate-900 bg-opacity-25 hover:bg-opacity-30 w-full transition duration-150 ease-in-out"
-                  href="#0"
+                  href="https://aiia.gitbook.io/pom"
                 >
                   <svg
                     className="shrink-0 fill-slate-300 mr-3"
